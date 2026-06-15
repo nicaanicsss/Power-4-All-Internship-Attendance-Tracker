@@ -912,21 +912,31 @@
                 <p id="authSubtitle">Please enter your credentials to access the hours tracker.</p>
             </div>
 
-            <form class="auth-form" onsubmit="handleAuthSubmit(event)">
+            <form class="auth-form" id="authForm" onsubmit="handleAuthSubmit(event)">
                 <div class="auth-group">
                     <label for="authEmail">Email Address</label>
                     <div class="auth-input-wrapper">
                         <i class="fa-solid fa-envelope"></i>
-                        <input type="email" id="authEmail" class="auth-input" required placeholder="name@power4all.org" />
+                        <input type="email" id="authEmail" class="auth-input" placeholder="name@power4all.org"
+                            oninput="clearAuthFieldError('authEmail')" />
                     </div>
+                    <span class="auth-field-error" id="authEmailError"></span>
                 </div>
                 
                 <div class="auth-group">
                     <label for="authPass">Password</label>
                     <div class="auth-input-wrapper">
                         <i class="fa-solid fa-lock"></i>
-                        <input type="password" id="authPass" class="auth-input" required placeholder="••••••••" />
+                        <input type="password" id="authPass" class="auth-input" placeholder="••••••••"
+                            oninput="onPasswordInput()" />
                         <i class="fa-solid fa-eye toggle-password" id="togglePasswordIcon" onclick="togglePasswordVisibility()"></i>
+                    </div>
+                    <span class="auth-field-error" id="authPassError"></span>
+                    <!-- Password rules shown only on Sign Up -->
+                    <div class="password-rules" id="passwordRules">
+                        <div class="pw-rule" id="rule-length"><i class="fa-solid fa-circle-xmark"></i> At least 8 characters</div>
+                        <div class="pw-rule" id="rule-upper"><i class="fa-solid fa-circle-xmark"></i> One uppercase letter</div>
+                        <div class="pw-rule" id="rule-number"><i class="fa-solid fa-circle-xmark"></i> One number</div>
                     </div>
                 </div>
 

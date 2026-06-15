@@ -1537,27 +1537,113 @@ function toggleAuthMode() {
         btnLabel.textContent = 'Sign Up';
         toggleMsg.textContent = 'Already have an account?';
         toggleLink.textContent = 'Sign In';
+        document.getElementById('passwordRules').classList.add('visible');
     } else {
         title.textContent = 'Sign In';
         subtitle.textContent = 'Please enter your credentials to access the hours tracker.';
         btnLabel.textContent = 'Sign In';
         toggleMsg.textContent = "Don't have an account?";
         toggleLink.textContent = 'Sign Up';
+        document.getElementById('passwordRules').classList.remove('visible');
     }
+    // Clear any lingering errors when switching modes
+    clearAuthFieldError('authEmail');
+    clearAuthFieldError('authPass');
+}
+
+function showAuthFieldError(fieldId, message) {
+    const input = document.getElementById(fieldId);
+    const errorEl = document.getElementById(fieldId + 'Error');
+    if (input) input.classList.add('input-error');
+    if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.classList.add('visible');
+    }
+}
+
+function clearAuthFieldError(fieldId) {
+    const input = document.getElementById(fieldId);
+    const errorEl = document.getElementById(fieldId + 'Error');
+    if (input) input.classList.remove('input-error');
+    if (errorEl) {
+        errorEl.textContent = '';
+        errorEl.classList.remove('visible');
+    }
+}
+
+function shakeAuthForm() {
+    const form = document.getElementById('authForm');
+    if (!form) return;
+    form.classList.remove('shake');
+    void form.offsetWidth; // reflow to restart animation
+    form.classList.add('shake');
+    setTimeout(() => form.classList.remove('shake'), 500);
+}
+
+function onPasswordInput() {
+    clearAuthFieldError('authPass');
+    if (!isSignUpMode) return;
+    const val = document.getElementById('authPass').value;
+    const rules = {
+        'rule-length': val.length >= 8,
+        'rule-upper':  /[A-Z]/.test(val),
+        'rule-number': /[0-9]/.test(val)
+    };
+    Object.entries(rules).forEach(([id, passed]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const icon = el.querySelector('i');
+        if (passed) {
+            el.classList.add('passed');
+            if (icon) { icon.classList.remove('fa-circle-xmark'); icon.classList.add('fa-circle-check'); }
+        } else {
+            el.classList.remove('passed');
+            if (icon) { icon.classList.remove('fa-circle-check'); icon.classList.add('fa-circle-xmark'); }
+        }
+    });
 }
 
 function handleAuthSubmit(e) {
     e.preventDefault();
+    clearAuthFieldError('authEmail');
+    clearAuthFieldError('authPass');
+
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPass').value;
+    let hasError = false;
 
-    if (!email || !password) {
-        showToast('Please fill out all fields.', 'warning');
-        return;
+    // Email empty check
+    if (!email) {
+        showAuthFieldError('authEmail', 'Email address is required.');
+        hasError = true;
+    } else if (!email.includes('@')) {
+        showAuthFieldError('authEmail', 'Enter a valid email address.');
+        hasError = true;
+    } else if (!email.endsWith('@power4all.org')) {
+        showAuthFieldError('authEmail', 'Only @power4all.org email addresses are allowed.');
+        hasError = true;
     }
 
-    if (!email.endsWith('@power4all.org')) {
-        showToast('Only @power4all.org email addresses are allowed.', 'error');
+    // Password empty check
+    if (!password) {
+        showAuthFieldError('authPass', 'Password is required.');
+        hasError = true;
+    } else if (isSignUpMode) {
+        // Password strength rules on Sign Up
+        if (password.length < 8) {
+            showAuthFieldError('authPass', 'Password must be at least 8 characters.');
+            hasError = true;
+        } else if (!/[A-Z]/.test(password)) {
+            showAuthFieldError('authPass', 'Password must include at least one uppercase letter.');
+            hasError = true;
+        } else if (!/[0-9]/.test(password)) {
+            showAuthFieldError('authPass', 'Password must include at least one number.');
+            hasError = true;
+        }
+    }
+
+    if (hasError) {
+        shakeAuthForm();
         return;
     }
 
@@ -1567,7 +1653,8 @@ function handleAuthSubmit(e) {
         // Sign Up check
         const userExists = users.some(u => u.email === email);
         if (userExists) {
-            showToast('Account already exists. Try signing in!', 'error');
+            showAuthFieldError('authEmail', 'An account with this email already exists. Try signing in!');
+            shakeAuthForm();
             return;
         }
 
@@ -1601,7 +1688,9 @@ function handleAuthSubmit(e) {
             if (typeof showSection === 'function') showSection('dashboard');
             showToast('Logged in successfully.', 'success');
         } else {
-            showToast('Invalid email or password. Verify your credentials or Sign Up first!', 'error');
+            showAuthFieldError('authEmail', 'Email or password is incorrect.');
+            showAuthFieldError('authPass', 'Check your credentials and try again.');
+            shakeAuthForm();
         }
     }
 }

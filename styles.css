@@ -3743,3 +3743,83 @@ ul {
     background: #d93025;
     color: white;
 }
+
+/* ==================== AUTH VALIDATION UI ==================== */
+
+/* Inline field error text */
+.auth-field-error {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #f87171;
+    min-height: 1rem;
+    padding-left: 2px;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.auth-field-error.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Input border turns red on error */
+.auth-input.input-error {
+    border-color: #f87171 !important;
+    box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.2) !important;
+}
+
+/* Shake animation on form submit fail */
+@keyframes auth-shake {
+    0%, 100% { transform: translateX(0); }
+    15%       { transform: translateX(-8px); }
+    30%       { transform: translateX(8px); }
+    45%       { transform: translateX(-6px); }
+    60%       { transform: translateX(6px); }
+    75%       { transform: translateX(-3px); }
+    90%       { transform: translateX(3px); }
+}
+
+.auth-form.shake {
+    animation: auth-shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+/* Password strength rules checklist (Sign Up only) */
+.password-rules {
+    display: none;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-top: 0.4rem;
+    padding: 0.6rem 0.75rem;
+    background: rgba(255,255,255,0.04);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-700);
+}
+
+.password-rules.visible {
+    display: flex;
+}
+
+.pw-rule {
+    font-size: 0.73rem;
+    color: var(--gray-400);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.2s ease;
+}
+
+.pw-rule i {
+    font-size: 0.72rem;
+    color: #f87171;
+    transition: color 0.2s ease;
+}
+
+.pw-rule.passed {
+    color: #4ade80;
+}
+
+.pw-rule.passed i {
+    color: #4ade80;
+}
