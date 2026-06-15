@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="P4A Intern Agenda Calendar — manage your internship tasks, deadlines, and get smart notifications." />
+    <title>P4A Agenda Calendar | POWER 4 ALL, Inc.</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <link rel="stylesheet" href="agenda.css" />
+</head>
+<body>
+
+    <!-- ===================== HEADER ===================== -->
+    <header id="header">
+        <div class="header-inner">
+            <div class="logo-area" onclick="window.location.href='index.html'" style="cursor:pointer;">
+                <svg width="150" height="42" viewBox="0 0 320 90" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+                    <circle cx="64" cy="42" r="32" fill="#585e63" opacity="0.65"/>
+                    <line x1="10" y1="18" x2="310" y2="18" stroke="#f5c518" stroke-width="6" stroke-linecap="square"/>
+                    <text x="12" y="60" font-family="'Poppins','Arial Black',sans-serif" font-weight="900" font-size="42" fill="#f5c518" letter-spacing="0.5">POWER</text>
+                    <text x="180" y="82" font-family="'Poppins','Arial Black',sans-serif" font-weight="900" font-size="82" fill="#f5c518">4</text>
+                    <text x="228" y="60" font-family="'Poppins','Arial Black',sans-serif" font-weight="900" font-size="42" fill="#f5c518" letter-spacing="0.5">ALL</text>
+                    <line x1="10" y1="69" x2="172" y2="69" stroke="#f5c518" stroke-width="6" stroke-linecap="square"/>
+                    <line x1="226" y1="69" x2="310" y2="69" stroke="#f5c518" stroke-width="6" stroke-linecap="square"/>
+                    <circle cx="308" cy="80" r="5" fill="none" stroke="#f5c518" stroke-width="1"/>
+                    <text x="305" y="83" font-family="'Poppins',sans-serif" font-weight="bold" font-size="6" fill="#f5c518">R</text>
+                </svg>
+                <span class="logo-badge-text">Agenda</span>
+            </div>
+
+            <nav class="header-nav">
+                <a href="index.html" class="nav-link">
+                    <i class="fa-solid fa-gauge-high"></i> Hours Tracker
+                </a>
+                <a href="agenda.html" class="nav-link active">
+                    <i class="fa-solid fa-calendar-days"></i> Agenda
+                </a>
+            </nav>
+
+            <!-- Notification Bell -->
+            <div class="notif-bell-wrap">
+                <button class="notif-bell" id="notifBell" onclick="toggleNotifPanel()" title="Notifications">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="notif-count" id="notifCount" style="display:none">0</span>
+                </button>
+            </div>
+
+            <button class="menu-toggle" id="menuToggle" onclick="toggleMobileNav()">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+        <div class="mobile-nav" id="mobileNav">
+            <a href="index.html" class="nav-link"><i class="fa-solid fa-gauge-high"></i> Hours Tracker</a>
+            <a href="agenda.html" class="nav-link active"><i class="fa-solid fa-calendar-days"></i> Agenda</a>
+        </div>
+    </header>
+
+    <!-- ===================== HERO ===================== -->
+    <div class="hero-banner">
+        <div class="hero-particles" id="heroParticles"></div>
+        <div class="hero-content">
+            <div class="hero-badge">
+                <i class="fa-solid fa-calendar-check"></i> Intern Portal &nbsp;·&nbsp; Agenda Calendar
+            </div>
+            <h1>Your <span class="hero-accent">Agenda</span> Board</h1>
+            <p>Plan your internship tasks, set deadlines, and never miss an important event. Smart notifications keep you on track.</p>
+            <div class="hero-stats-row">
+                <div class="hero-stat">
+                    <span class="hero-stat-val" id="heroTotalAgendas">0</span>
+                    <span class="hero-stat-lbl">Tasks</span>
+                </div>
+                <div class="hero-stat">
+                    <span class="hero-stat-val stat-today" id="heroDueToday">0</span>
+                    <span class="hero-stat-lbl">Due Today</span>
+                </div>
+                <div class="hero-stat">
+                    <span class="hero-stat-val stat-tomorrow" id="heroMeetingsCount">0</span>
+                    <span class="hero-stat-lbl">Meetings</span>
+                </div>
+                <div class="hero-stat">
+                    <span class="hero-stat-val stat-overdue" id="heroOverdue">0</span>
+                    <span class="hero-stat-lbl">Overdue</span>
+                </div>
+                <div class="hero-stat" id="heroTrackerStat" style="display:none;">
+                    <span class="hero-stat-val stat-crosslink" id="heroUnloggedCount">0</span>
+                    <span class="hero-stat-lbl">Unlogged Days</span>
+                </div>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="hero-icon-ring">
+                <i class="fa-solid fa-calendar-check"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== NOTIFICATION PANEL ===================== -->
+    <div class="notif-panel" id="notifPanel" style="display:none;">
+        <div class="notif-panel-header">
+            <span><i class="fa-solid fa-bell"></i> Notifications</span>
+            <button onclick="clearNotifications()" class="notif-clear-btn">Clear All</button>
+        </div>
+        <div id="notifList" class="notif-list">
+            <div class="notif-empty"><i class="fa-regular fa-bell-slash"></i> No notifications</div>
+        </div>
+    </div>
+    <div class="notif-overlay" id="notifOverlay" onclick="toggleNotifPanel()" style="display:none;"></div>
+
+    <!-- ===================== MAIN APP ===================== -->
+    <main class="main-container">
+
+        <!-- === TOOLBAR === -->
+        <div class="toolbar-row">
+            <div class="view-tabs" id="viewTabs">
+                <button class="view-tab active" id="tab-calendar" onclick="switchView('calendar')">
+                    <i class="fa-solid fa-calendar-days"></i> Calendar
+                </button>
+                <button class="view-tab" id="tab-list" onclick="switchView('list')">
+                    <i class="fa-solid fa-list-check"></i> List View
+                </button>
+                <button class="view-tab" id="tab-upcoming" onclick="switchView('upcoming')">
+                    <i class="fa-solid fa-clock"></i> Upcoming
+                </button>
+            </div>
+            <div class="toolbar-right">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchAgenda" placeholder="Search agendas..." oninput="renderCurrentView()" />
+                </div>
+                <div class="filter-wrap">
+                    <select id="filterPriority" onchange="renderCurrentView()" class="filter-sel">
+                        <option value="">All Priorities</option>
+                        <option value="high">🔴 High</option>
+                        <option value="medium">🟡 Medium</option>
+                        <option value="low">🟢 Low</option>
+                    </select>
+                    <select id="filterCategory" onchange="renderCurrentView()" class="filter-sel">
+                        <option value="">All Categories</option>
+                        <option value="task">Task</option>
+                        <option value="meeting">Meeting</option>
+                        <option value="deadline">Deadline</option>
+                        <option value="reminder">Reminder</option>
+                        <option value="event">Event</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="openAddModal()">
+                    <i class="fa-solid fa-plus"></i> Add Agenda
+                </button>
+            </div>
+        </div>
+
+        <!-- === CALENDAR VIEW === -->
+        <div class="view-section" id="view-calendar">
+            <div class="calendar-card card">
+                <div class="cal-nav-row">
+                    <button class="cal-nav-btn" onclick="changeMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                    <h2 class="cal-month-title" id="calMonthTitle">—</h2>
+                    <button class="cal-nav-btn" onclick="changeMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                    <button class="cal-today-btn" onclick="goToToday()">Today</button>
+                </div>
+                <div class="cal-weekdays">
+                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div>
+                    <div>Thu</div><div>Fri</div><div>Sat</div>
+                </div>
+                <div class="cal-grid" id="calGrid"></div>
+            </div>
+
+            <!-- Day Detail Panel (shows when a date is clicked) -->
+            <div class="day-detail-card card" id="dayDetailCard" style="display:none;">
+                <div class="day-detail-header">
+                    <div>
+                        <h3 id="dayDetailTitle">Selected Day</h3>
+                        <span id="dayDetailSub" class="day-detail-sub"></span>
+                    </div>
+                    <button class="icon-btn" onclick="document.getElementById('dayDetailCard').style.display='none'">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div id="dayDetailList" class="day-detail-list"></div>
+                <button class="btn btn-primary btn-sm" onclick="openAddModalForDate()" style="margin-top:1rem;">
+                    <i class="fa-solid fa-plus"></i> Add for this day
+                </button>
+            </div>
+        </div>
+
+        <!-- === LIST VIEW === -->
+        <div class="view-section" id="view-list" style="display:none;">
+            <div class="card">
+                <div class="list-header-row">
+                    <h3><i class="fa-solid fa-list-check"></i> All Agendas</h3>
+                    <div class="sort-wrap">
+                        <label>Sort by:</label>
+                        <select id="sortAgenda" onchange="renderCurrentView()" class="filter-sel">
+                            <option value="date">Date</option>
+                            <option value="priority">Priority</option>
+                            <option value="category">Category</option>
+                            <option value="status">Status</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="listContainer" class="list-container"></div>
+            </div>
+        </div>
+
+        <!-- === UPCOMING VIEW === -->
+        <div class="view-section" id="view-upcoming" style="display:none;">
+            <div id="upcomingContainer" class="upcoming-container"></div>
+        </div>
+
+    </main>
+
+    <!-- ===================== FOOTER ===================== -->
+    <footer class="app-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <svg width="115" height="32" viewBox="0 0 320 90" xmlns="http://www.w3.org/2000/svg" style="display:block;margin-right:4px;">
+                    <circle cx="64" cy="42" r="32" fill="#585e63" opacity="0.65"/>
+                    <line x1="10" y1="18" x2="310" y2="18" stroke="#f5c518" stroke-width="6" stroke-linecap="square"/>
+                    <text x="12" y="60" font-family="'Poppins','Arial Black',sans-serif" font-weight="900" font-size="42" fill="#f5c518" letter-spacing="0.5">POWER</text>
+                    <text x="180" y="82" font-family="'Poppins','Arial Black',sans-serif" font-weight="900" font-size="82" fill="#f5c518">4</text>
+                    <text x="228" y="60" font-family="'Poppins','Arial Black',sans-serif" font-weight="900" font-size="42" fill="#f5c518" letter-spacing="0.5">ALL</text>
+                    <line x1="10" y1="69" x2="172" y2="69" stroke="#f5c518" stroke-width="6" stroke-linecap="square"/>
+                    <line x1="226" y1="69" x2="310" y2="69" stroke="#f5c518" stroke-width="6" stroke-linecap="square"/>
+                    <circle cx="308" cy="80" r="5" fill="none" stroke="#f5c518" stroke-width="1"/>
+                    <text x="305" y="83" font-family="'Poppins',sans-serif" font-weight="bold" font-size="6" fill="#f5c518">R</text>
+                </svg>
+                <div><strong>POWER 4 ALL, Inc.</strong><span>Intern Agenda Calendar</span></div>
+            </div>
+            <div class="footer-tagline">
+                <i class="fa-solid fa-sun"></i> Clean Power &nbsp;|&nbsp;
+                <i class="fa-solid fa-droplet"></i> Clean Water &nbsp;|&nbsp;
+                <i class="fa-solid fa-earth-asia"></i> Better Tomorrow
+            </div>
+            <div class="footer-meta">
+                <a href="https://power4all.org" target="_blank">power4all.org</a>
+                &nbsp;·&nbsp; Data saved locally on your browser
+            </div>
+        </div>
+    </footer>
+
+    <!-- ===================== TOAST ===================== -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ===================== ADD / EDIT MODAL ===================== -->
+    <div class="modal-overlay" id="agendaModal" style="display:none;">
+        <div class="modal-box agenda-modal-box">
+            <div class="modal-header">
+                <h3 id="modalTitle"><i class="fa-solid fa-calendar-plus"></i> Add Agenda</h3>
+                <button class="modal-close" onclick="closeAgendaModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="agTitle">Title <span class="required">*</span></label>
+                    <input type="text" id="agTitle" class="form-input" placeholder="e.g. Submit weekly report..." />
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="agDate">Date <span class="required">*</span></label>
+                        <input type="date" id="agDate" class="form-input" />
+                    </div>
+                    <div class="form-group">
+                        <label for="agTime">Time (optional)</label>
+                        <input type="time" id="agTime" class="form-input" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="agCategory">Category</label>
+                        <select id="agCategory" class="form-input">
+                            <option value="task">📋 Task</option>
+                            <option value="meeting">🤝 Meeting</option>
+                            <option value="task_meeting">📋🤝 Task & Meeting</option>
+                            <option value="deadline">⏰ Deadline</option>
+                            <option value="reminder">🔔 Reminder</option>
+                            <option value="event">🎉 Event</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="agPriority">Priority</label>
+                        <select id="agPriority" class="form-input">
+                            <option value="medium">🟡 Medium</option>
+                            <option value="high">🔴 High</option>
+                            <option value="low">🟢 Low</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="agRepeat">Repeat</label>
+                    <select id="agRepeat" class="form-input">
+                        <option value="none">No repeat</option>
+                        <option value="mon">Every Monday (8 times)</option>
+                        <option value="tue">Every Tuesday (8 times)</option>
+                        <option value="wed">Every Wednesday (8 times)</option>
+                        <option value="thu">Every Thursday (8 times)</option>
+                        <option value="fri">Every Friday (8 times)</option>
+                        <option value="sat">Every Saturday (8 times)</option>
+                        <option value="sun">Every Sunday (8 times)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="agDesc">Description (optional)</label>
+                    <textarea id="agDesc" class="form-input form-textarea" rows="3" placeholder="Add more details about this agenda..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="agLocation">Location / Link (optional)</label>
+                    <input type="text" id="agLocation" class="form-input" placeholder="e.g. Conference Room A or Zoom link..." />
+                </div>
+
+                <div class="form-group notif-toggle-row">
+                    <label>
+                        <input type="checkbox" id="agNotif" checked /> Enable browser notifications for this agenda
+                    </label>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeAgendaModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveAgenda()">
+                    <i class="fa-solid fa-floppy-disk"></i> <span id="modalSaveLabel">Save Agenda</span>
+                </button>
+            </div>
+
+            <input type="hidden" id="agEditId" value="" />
+        </div>
+    </div>
+
+    <!-- ===================== DELETE CONFIRM MODAL ===================== -->
+    <div class="modal-overlay" id="deleteModal" style="display:none;">
+        <div class="modal-box modal-box-sm">
+            <div class="modal-icon danger"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h3>Delete Agenda?</h3>
+            <p>This cannot be undone. Are you sure?</p>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+            </div>
+            <input type="hidden" id="deleteTargetId" value="" />
+        </div>
+    </div>
+
+    <!-- ===================== VIEW DETAIL MODAL ===================== -->
+    <div class="modal-overlay" id="viewModal" style="display:none;">
+        <div class="modal-box agenda-view-box">
+            <div class="view-modal-header" id="viewModalHeader">
+                <div class="view-modal-cat" id="viewModalCat"></div>
+                <button class="modal-close" onclick="closeViewModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="view-modal-body">
+                <h2 id="viewModalTitle"></h2>
+                <div class="view-modal-meta" id="viewModalMeta"></div>
+                <div class="view-modal-desc" id="viewModalDesc"></div>
+                <div class="view-modal-location" id="viewModalLocation"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeViewModal()">Close</button>
+                <button class="btn btn-outline" id="viewEditBtn" onclick="editFromView()">
+                    <i class="fa-solid fa-pen"></i> Edit
+                </button>
+                <button class="btn btn-danger-outline" id="viewDeleteBtn">
+                    <i class="fa-solid fa-trash"></i> Delete
+                </button>
+            </div>
+            <input type="hidden" id="viewModalId" />
+        </div>
+    </div>
+
+    <script src="agenda.js"></script>
+</body>
+</html>

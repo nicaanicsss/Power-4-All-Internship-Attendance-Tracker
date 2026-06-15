@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description"
+        content="Power 4 All Internship Hours Tracker - Track your 240-hour internship progress with POWER 4 ALL, Inc." />
+    <meta name="keywords" content="Power 4 All, internship, hours tracker, P4A, attendance" />
+    <title>P4A Intern Hours Tracker | POWER 4 ALL, Inc.</title>
+
+    <!-- Google Fonts: Poppins (matches P4A website) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Caveat+Brush&display=swap"
+        rel="stylesheet" />
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+    <!-- ===================== HEADER ===================== -->
+    <header id="header">
+        <div class="header-inner">
+            <div class="logo-area" onclick="showSection('dashboard')" style="cursor: pointer;">
+                <svg width="150" height="42" viewBox="0 0 320 90" xmlns="http://www.w3.org/2000/svg"
+                    style="display: block;">
+                    <!-- Gray circle background behind POW -->
+                    <circle cx="64" cy="42" r="32" fill="#585e63" opacity="0.65" />
+
+                    <!-- Top yellow line -->
+                    <line x1="10" y1="18" x2="310" y2="18" stroke="#f5c518" stroke-width="6" stroke-linecap="square" />
+
+                    <!-- POWER text -->
+                    <text x="12" y="60" font-family="'Poppins', 'Montserrat', 'Arial Black', sans-serif"
+                        font-weight="900" font-size="42" fill="#f5c518" letter-spacing="0.5">POWER</text>
+
+                    <!-- 4 text -->
+                    <text x="180" y="82" font-family="'Poppins', 'Montserrat', 'Arial Black', sans-serif"
+                        font-weight="900" font-size="82" fill="#f5c518">4</text>
+
+                    <!-- ALL text -->
+                    <text x="228" y="60" font-family="'Poppins', 'Montserrat', 'Arial Black', sans-serif"
+                        font-weight="900" font-size="42" fill="#f5c518" letter-spacing="0.5">ALL</text>
+
+                    <!-- Bottom left line -->
+                    <line x1="10" y1="69" x2="172" y2="69" stroke="#f5c518" stroke-width="6" stroke-linecap="square" />
+
+                    <!-- Bottom right line -->
+                    <line x1="226" y1="69" x2="310" y2="69" stroke="#f5c518" stroke-width="6" stroke-linecap="square" />
+
+                    <!-- Trademark R -->
+                    <circle cx="308" cy="80" r="5" fill="none" stroke="#f5c518" stroke-width="1" />
+                    <text x="305" y="83" font-family="'Poppins', sans-serif" font-weight="bold" font-size="6"
+                        fill="#f5c518">R</text>
+                </svg>
+                <span class="logo-badge-text">Intern</span>
+            </div>
+            <nav class="header-nav">
+                <a href="#dashboard" class="nav-link active" id="nav-dashboard" onclick="showSection('dashboard')">
+                    <i class="fa-solid fa-gauge-high"></i> Dashboard
+                </a>
+                <a href="#log-hours" class="nav-link" id="nav-log" onclick="showSection('log')">
+                    <i class="fa-solid fa-clock"></i> Log Hours
+                </a>
+                <a href="#records" class="nav-link" id="nav-records" onclick="showSection('records')">
+                    <i class="fa-solid fa-table-list"></i> Records
+                </a>
+                <a href="#reports" class="nav-link" id="nav-reports" onclick="showSection('reports')">
+                    <i class="fa-solid fa-chart-bar"></i> Reports
+                </a>
+                <a href="agenda.html" class="nav-link" style="background:rgba(245,197,24,0.15);border:1px solid rgba(245,197,24,0.35);">
+                    <i class="fa-solid fa-calendar-days"></i> Agenda
+                </a>
+            </nav>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <button class="logout-btn-header" onclick="logout()" title="Logout" id="logoutBtn" style="display:none;">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+                <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile nav -->
+        <div class="mobile-nav" id="mobileNav">
+            <a href="#" class="nav-link" onclick="showSection('dashboard'); closeMobileNav()"><i
+                    class="fa-solid fa-gauge-high"></i> Dashboard</a>
+            <a href="#" class="nav-link" onclick="showSection('log'); closeMobileNav()"><i
+                    class="fa-solid fa-clock"></i> Log Hours</a>
+            <a href="#" class="nav-link" onclick="showSection('records'); closeMobileNav()"><i
+                    class="fa-solid fa-table-list"></i> Records</a>
+            <a href="#" class="nav-link" onclick="showSection('reports'); closeMobileNav()"><i
+                    class="fa-solid fa-chart-bar"></i> Reports</a>
+            <a href="agenda.html" class="nav-link"><i class="fa-solid fa-calendar-days"></i> Agenda</a>
+        </div>
+    </header>
+
+    <!-- ===================== HERO BANNER ===================== -->
+    <div class="hero-banner">
+        <div class="hero-particles" id="heroParticles"></div>
+        <div class="hero-content">
+            <div class="hero-badge">
+                <i class="fa-solid fa-bolt"></i> Intern Portal &nbsp;·&nbsp; Internship Hours Tracker
+            </div>
+            <h1>Welcome, <span class="hero-accent" id="heroInternName">Nica</span>!</h1>
+            <p>Track your journey toward <strong>240 hours</strong> of impactful internship experience at POWER 4 ALL,
+                Inc. — empowering communities with clean power &amp; clean water.</p>
+            <div class="hero-mission-tags">
+                <span><i class="fa-solid fa-sun"></i> Clean Power</span>
+                <span><i class="fa-solid fa-droplet"></i> Clean Water</span>
+                <span><i class="fa-solid fa-leaf"></i> Sustainability</span>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="progress-ring-hero" id="heroProgressRing">
+                <svg viewBox="0 0 200 200" class="ring-svg">
+                    <circle cx="100" cy="100" r="80" class="ring-bg" />
+                    <circle cx="100" cy="100" r="80" class="ring-fill" id="heroRingFill" />
+                </svg>
+                <div class="ring-center">
+                    <span class="ring-percent" id="heroPercent">0%</span>
+                    <span class="ring-label">Complete</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== MAIN APP ===================== -->
+    <main class="main-container">
+
+        <!-- ===== DASHBOARD SECTION ===== -->
+        <section class="app-section active" id="section-dashboard">
+            <div class="section-title-row">
+                <h2><i class="fa-solid fa-gauge-high"></i> Dashboard</h2>
+                <span class="section-date" id="currentDate"></span>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card stat-total">
+                    <div class="stat-accent-bar"></div>
+                    <div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="statTotal">0h 0m</span>
+                        <span class="stat-label">Total Hours Logged</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-remaining">
+                    <div class="stat-accent-bar"></div>
+                    <div class="stat-icon"><i class="fa-solid fa-flag-checkered"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="statRemaining">240h 0m</span>
+                        <span class="stat-label">Hours Remaining</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-days">
+                    <div class="stat-accent-bar"></div>
+                    <div class="stat-icon"><i class="fa-solid fa-calendar-check"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="statDays">0</span>
+                        <span class="stat-label">Days Attended</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-avg">
+                    <div class="stat-accent-bar"></div>
+                    <div class="stat-icon"><i class="fa-solid fa-chart-line"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="statAvg">0h 0m</span>
+                        <span class="stat-label">Avg. per Day</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile & Overall Progress Container -->
+            <div class="dashboard-top-row">
+
+                <!-- Profile Card -->
+                <div class="card profile-card">
+                    <div class="profile-header">
+                        <h3><i class="fa-solid fa-user-tie"></i> My Profile</h3>
+                        <button class="icon-btn icon-btn-edit" id="editProfileBtn" onclick="toggleProfileEdit()"
+                            title="Edit Profile">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                    </div>
+
+                    <!-- View Mode -->
+                    <div id="profileViewMode" class="profile-view">
+                        <div class="profile-avatar" id="profileAvatar">ND</div>
+                        <div class="profile-details">
+                            <h4 id="profDispName">Nica Desacola</h4>
+                            <div class="profile-meta-item" id="profDispDept">
+                                <i class="fa-solid fa-building"></i> Choose Department
+                            </div>
+                            <div class="profile-meta-item" id="profDispSchool">
+                                <i class="fa-solid fa-graduation-cap"></i> Choose School
+                            </div>
+                            <div class="profile-meta-item" id="profDispId">
+                                <i class="fa-solid fa-id-card"></i> ID: P4A-2026-001
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Edit Mode -->
+                    <div id="profileEditMode" class="profile-edit" style="display: none;">
+                        <div class="form-group">
+                            <label for="profName">Full Name</label>
+                            <input type="text" id="profName" class="form-input" placeholder="Enter your name..." />
+                        </div>
+                        <div class="form-group">
+                            <label for="profDeptInput">Department</label>
+                            <select id="profDeptInput" class="form-input">
+                                <option value="Engineering">Engineering</option>
+                                <option value="Intelligent Systems">Intelligent Systems</option>
+                                <option value="Operations">Operations</option>
+                                <option value="Business Development">Business Development</option>
+                                <option value="Marketing & Communications">Marketing & Communications</option>
+                                <option value="Admin & Finance">Admin & Finance</option>
+                                <option value="Research & Development">Research & Development</option>
+                                <option value="Field Work">Field Work</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="profSchool">School / Institution</label>
+                            <input type="text" id="profSchool" class="form-input" placeholder="Enter school..." />
+                        </div>
+                        <div class="form-group">
+                            <label for="profId">Intern ID / ID No.</label>
+                            <input type="text" id="profId" class="form-input" placeholder="e.g. P4A-2026-001..." />
+                        </div>
+                        <div class="profile-edit-actions">
+                            <button class="btn btn-outline btn-sm" onclick="cancelProfileEdit()">Cancel</button>
+                            <button class="btn btn-primary btn-sm" onclick="saveProfile()">Save</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Progress Bar -->
+                <div class="progress-section card">
+                    <div class="progress-header">
+                        <div>
+                            <h3>Overall Progress</h3>
+                            <p>Your journey to <strong>240 hours</strong> of internship completion</p>
+                        </div>
+                        <div class="progress-badge" id="progressBadge">
+                            <i class="fa-solid fa-seedling"></i> Just Starting
+                        </div>
+                    </div>
+                    <div class="big-progress-bar">
+                        <div class="big-progress-fill" id="mainProgressFill" style="width: 0%">
+                            <span class="progress-pulse"></span>
+                        </div>
+                        <div class="progress-milestones">
+                            <div class="milestone" style="left: 25%"><span>25%</span></div>
+                            <div class="milestone" style="left: 50%"><span>50%</span></div>
+                            <div class="milestone" style="left: 75%"><span>75%</span></div>
+                        </div>
+                    </div>
+                    <div class="progress-footer">
+                        <span><span id="progressHours">0</span> / 240 hours</span>
+                        <span class="progress-percent-text" id="progressPercent">0%</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Weekly Summary + Quick Log -->
+            <div class="dashboard-grid-2">
+
+                <!-- Recent Activity -->
+                <div class="card">
+                    <div class="card-header-row">
+                        <h3><i class="fa-solid fa-clock-rotate-left"></i> Recent Activity</h3>
+                        <a href="#" onclick="showSection('records')" class="see-all-link">See All</a>
+                    </div>
+                    <div id="recentActivity" class="recent-list">
+                        <div class="empty-state">
+                            <i class="fa-regular fa-calendar-xmark"></i>
+                            <p>No hours logged yet.<br>Start logging to see your activity!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Allowance & Motivation Tracker -->
+                <div class="allowance-card-premium">
+
+                    <!-- Top: title + rate pill -->
+                    <div class="acp-top">
+                        <span class="acp-title"><i class="fa-solid fa-peso-sign"></i> Allowance Tracker</span>
+                        <span class="acp-rate-pill">₱350 / day</span>
+                    </div>
+
+                    <!-- Earned hero number -->
+                    <div class="acp-earned-block">
+                        <span class="acp-earned-label">Total Earned So Far</span>
+                        <span class="acp-earned-value" id="allowanceEarned">₱0.00</span>
+                        <span class="acp-earned-sub" id="allowanceEarnedDays">0 days × ₱350</span>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="acp-divider"></div>
+
+                    <!-- Progress row -->
+                    <div class="acp-progress-section">
+                        <div class="acp-progress-labels">
+                            <span id="allowanceProgressText">0 / 30 days</span>
+                            <span class="acp-proj-wrap"><i class="fa-solid fa-flag-checkered"></i> Projected: <strong id="allowanceTotal">₱0.00</strong></span>
+                        </div>
+                        <div class="acp-bar-track">
+                            <div class="acp-bar-fill" id="allowanceProgressFill" style="width:0%"></div>
+                        </div>
+                        <div class="acp-bar-pct" id="allowancePercent">0% of internship complete</div>
+                    </div>
+
+                    <!-- Quote section -->
+                    <div class="acp-quote-section">
+                        <p class="acp-quote-text" id="motivationalQuote">"Believe you can and you're halfway there."</p>
+                        <div class="acp-quote-footer">
+                            <span class="acp-quote-author" id="motivationalAuthor">— Theodore Roosevelt</span>
+                            <button class="acp-refresh-btn" onclick="cheerMeUp()" title="New quote">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Estimated Completion -->
+            <div class="estimate-card-v2">
+                <div class="ecv2-left">
+                    <div class="ecv2-icon"><i class="fa-solid fa-calendar-check"></i></div>
+                    <div class="ecv2-text">
+                        <span class="ecv2-label">Estimated Completion</span>
+                        <p class="ecv2-desc" id="estimateText">Log your hours to see your estimated completion date.</p>
+                    </div>
+                </div>
+                <div class="ecv2-date" id="estimateBadge">—</div>
+            </div>
+        </section>
+
+        <!-- ===== LOG HOURS SECTION ===== -->
+        <section class="app-section" id="section-log">
+            <div class="section-title-row">
+                <h2><i class="fa-solid fa-clock"></i> Log Hours</h2>
+                <span class="section-desc">Record your daily internship attendance</span>
+            </div>
+
+            <div class="log-layout">
+                <div class="card log-form-card">
+                    <h3 class="form-title"><i class="fa-solid fa-pen-to-square"></i> New Entry</h3>
+
+                    <div class="lunch-notice lunch-notice-lg">
+                        <i class="fa-solid fa-utensils"></i>
+                        <div>
+                            <strong>Lunch Break Policy</strong>
+                            <span>1 hour (60 mins) is automatically deducted from your logged time each day. Enter your
+                                actual time-in and time-out — the system handles the rest.</span>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="logDate">Date <span class="required">*</span></label>
+                            <input type="date" id="logDate" class="form-input" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="logType">Day Type</label>
+                            <select id="logType" class="form-input">
+                                <option value="regular">Regular Day</option>
+                                <option value="holiday">Holiday Work</option>
+                                <option value="makeup">Make-up Day</option>
+                                <option value="virtual">Virtual/Remote</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="logTimeIn">Time In <span class="required">*</span></label>
+                            <input type="time" id="logTimeIn" class="form-input" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="logTimeOut">Time Out <span class="required">*</span></label>
+                            <input type="time" id="logTimeOut" class="form-input" required />
+                        </div>
+                    </div>
+
+                    <!-- Duration Preview -->
+                    <div class="duration-preview" id="durationPreview" style="display:none;">
+                        <i class="fa-solid fa-stopwatch"></i>
+                        <span>Duration: <strong id="durationText">—</strong></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="logDept">Department / Area</label>
+                        <select id="logDept" class="form-input">
+                            <option value="">Select department...</option>
+                            <option value="Engineering">Engineering</option>
+                            <option value="Intelligent Systems">Intelligent Systems</option>
+                            <option value="Operations">Operations</option>
+                            <option value="Business Development">Business Development</option>
+                            <option value="Marketing & Communications">Marketing & Communications</option>
+                            <option value="Admin & Finance">Admin & Finance</option>
+                            <option value="Research & Development">Research & Development</option>
+                            <option value="Field Work">Field Work</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="logTask">Task / Activity Description <span class="required">*</span></label>
+                        <textarea id="logTask" class="form-input form-textarea"
+                            placeholder="Describe what you worked on today... (e.g., Assisted in solar panel system configuration, attended team briefing on clean water project...)"
+                            rows="4"></textarea>
+                    </div>
+
+                    <!-- Optional details toggle -->
+                    <button type="button" class="optional-toggle" id="optionalToggle" onclick="toggleOptionalFields()">
+                        <i class="fa-solid fa-chevron-right" id="optionalToggleIcon"></i>
+                        Add details <span class="optional-badge">optional</span>
+                    </button>
+                    <div class="optional-fields" id="optionalFields" style="display:none;">
+                        <div class="form-group">
+                            <label for="logLearning">Key Learnings</label>
+                            <textarea id="logLearning" class="form-input form-textarea"
+                                placeholder="What did you learn today?" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="logMood">Day Rating</label>
+                            <div class="mood-selector" id="moodSelector">
+                                <button type="button" class="mood-btn" data-mood="1" title="Poor">😞</button>
+                                <button type="button" class="mood-btn" data-mood="2" title="Okay">😐</button>
+                                <button type="button" class="mood-btn" data-mood="3" title="Good">🙂</button>
+                                <button type="button" class="mood-btn" data-mood="4" title="Great">😊</button>
+                                <button type="button" class="mood-btn" data-mood="5" title="Excellent!">🌟</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-outline" onclick="clearLogForm()">
+                            <i class="fa-solid fa-rotate-left"></i> Clear
+                        </button>
+                        <button class="btn btn-primary" onclick="saveLogEntry()">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Entry
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Info Panel -->
+                <div class="log-info-panel">
+                    <div class="card info-card">
+                        <h4><i class="fa-solid fa-circle-info"></i> Internship Info</h4>
+                        <div class="info-item">
+                            <span class="info-label">Company</span>
+                            <span class="info-value">POWER 4 ALL, Inc.</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Required Hours</span>
+                            <span class="info-value highlight-green">240 Hours</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Logged So Far</span>
+                            <span class="info-value" id="infoLogged">0 hrs</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Remaining</span>
+                            <span class="info-value highlight-orange" id="infoRemaining">240 hrs</span>
+                        </div>
+                    </div>
+
+                    <div class="card info-card mission-card">
+                        <h4><i class="fa-solid fa-bullseye"></i> Our Mission</h4>
+                        <p>"We are in the social business of designing, engineering, supply and distribution,
+                            construction, installation and commissioning of inventive and field-tested solutions to
+                            <strong>Clean Power</strong> and <strong>Clean Water</strong>."</p>
+                        <div class="mission-icons">
+                            <div><i class="fa-solid fa-sun"></i><span>Clean Power</span></div>
+                            <div><i class="fa-solid fa-droplet"></i><span>Clean Water</span></div>
+                            <div><i class="fa-solid fa-earth-asia"></i><span>Impact</span></div>
+                        </div>
+                    </div>
+
+                    <div class="card info-card tips-card">
+                        <h4><i class="fa-solid fa-lightbulb"></i> Tips</h4>
+                        <ul class="tips-list">
+                            <li>Log your hours daily to maintain accuracy</li>
+                            <li>Include detailed task descriptions for your reports</li>
+                            <li>Rate your day to track your experience quality</li>
+                            <li>Use the Reports section to export your DTR</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== RECORDS SECTION ===== -->
+        <section class="app-section" id="section-records">
+            <div class="section-title-row">
+                <h2><i class="fa-solid fa-table-list"></i> Attendance Records</h2>
+                <div class="records-actions">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="searchRecords" placeholder="Search records..."
+                            oninput="filterRecords()" />
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="exportCSV()">
+                        <i class="fa-solid fa-file-csv"></i> Export CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Records Table -->
+            <div class="card table-card">
+                <div class="table-responsive">
+                    <table class="records-table" id="recordsTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th class="sortable" onclick="sortRecords('date')"><i class="fa-regular fa-calendar"></i> Date <i class="fa-solid fa-sort sort-icon" id="sort-date"></i></th>
+                                <th><i class="fa-solid fa-arrow-right-from-bracket"></i> Time In</th>
+                                <th><i class="fa-solid fa-arrow-right-to-bracket"></i> Time Out</th>
+                                <th class="sortable" onclick="sortRecords('duration')"><i class="fa-solid fa-stopwatch"></i> Duration <i class="fa-solid fa-sort sort-icon" id="sort-duration"></i></th>
+                                <th><i class="fa-solid fa-building"></i> Dept.</th>
+                                <th><i class="fa-solid fa-list-check"></i> Activity</th>
+                                <th class="sortable" onclick="sortRecords('rating')"><i class="fa-solid fa-star"></i> Rating <i class="fa-solid fa-sort sort-icon" id="sort-rating"></i></th>
+                                <th><i class="fa-solid fa-gear"></i> Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordsBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="emptyRecords" class="empty-state-rich table-empty">
+                    <svg class="empty-svg" viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="15" y="20" width="90" height="70" rx="6" fill="#f1f3f4" stroke="#dadce0" stroke-width="1.5"/>
+                        <rect x="25" y="35" width="50" height="6" rx="3" fill="#dadce0"/>
+                        <rect x="25" y="48" width="35" height="6" rx="3" fill="#e8eaed"/>
+                        <rect x="25" y="61" width="42" height="6" rx="3" fill="#e8eaed"/>
+                        <circle cx="90" cy="30" r="14" fill="#f5c518" opacity="0.15"/>
+                        <circle cx="90" cy="30" r="8" fill="#f5c518" opacity="0.3"/>
+                        <line x1="87" y1="27" x2="93" y2="33" stroke="#d1a60e" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="87" y1="33" x2="93" y2="27" stroke="#d1a60e" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <h4>No records yet</h4>
+                    <p>Start logging your hours to track your internship progress!</p>
+                    <button class="btn btn-primary btn-sm" onclick="showSection('log')">
+                        <i class="fa-solid fa-plus"></i> Log Your First Day
+                    </button>
+                </div>
+                <div class="table-footer" id="tableFooter">
+                    <span id="recordCount">0 records</span>
+                    <span id="tableTotalHours">Total: 0h 0m</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== REPORTS SECTION ===== -->
+        <section class="app-section" id="section-reports">
+            <div class="section-title-row">
+                <h2><i class="fa-solid fa-chart-bar"></i> Reports & Analytics</h2>
+                <span class="section-desc">Visual insights on your internship journey</span>
+            </div>
+
+            <div class="reports-grid">
+                <!-- Hours by Week Chart -->
+                <div class="card chart-card">
+                    <h3><i class="fa-solid fa-chart-column"></i> Weekly Hours</h3>
+                    <div class="bar-chart" id="weeklyChart">
+                        <div class="chart-empty">
+                            <i class="fa-solid fa-chart-simple"></i>
+                            <p>Log hours to see weekly breakdown</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Donut -->
+                <div class="card chart-card donut-card">
+                    <h3><i class="fa-solid fa-circle-half-stroke"></i> Completion Status</h3>
+                    <div class="donut-chart-wrap">
+                        <div class="donut-chart" id="donutChart">
+                            <svg viewBox="0 0 140 140" class="donut-svg">
+                                <circle cx="70" cy="70" r="55" class="donut-bg" />
+                                <circle cx="70" cy="70" r="55" class="donut-fill" id="donutFill" />
+                            </svg>
+                            <div class="donut-center">
+                                <span class="donut-val" id="donutVal">0%</span>
+                                <span class="donut-sub">done</span>
+                            </div>
+                        </div>
+                        <div class="donut-legend">
+                            <div class="legend-item">
+                                <span class="legend-dot legend-done"></span>
+                                <span>Completed: <strong id="legendDone">0h</strong></span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot legend-remaining"></span>
+                                <span>Remaining: <strong id="legendRemaining">240h</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <!-- Accomplishments & Key Learnings Log -->
+                <div class="card chart-card learnings-log-card">
+                    <h3><i class="fa-solid fa-book-open"></i> Task & Learning Log</h3>
+                    <div id="learningsLogList" class="learnings-log-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Day Rating Distribution -->
+                <div class="card chart-card">
+                    <h3><i class="fa-solid fa-face-smile"></i> Day Rating Distribution</h3>
+                    <div id="ratingChart" class="rating-chart">
+                        <div class="chart-empty">
+                            <i class="fa-regular fa-face-smile"></i>
+                            <p>Rate your days to see distribution</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Card -->
+                <div class="card chart-card summary-report-card">
+                    <h3><i class="fa-solid fa-file-lines"></i> Summary Report</h3>
+                    <div class="summary-report">
+                        <div class="report-row">
+                            <span>Total Hours Logged</span>
+                            <strong id="repTotal">0h 0m</strong>
+                        </div>
+                        <div class="report-row">
+                            <span>Total Days Attended</span>
+                            <strong id="repDays">0 days</strong>
+                        </div>
+                        <div class="report-row">
+                            <span>Average Hours/Day</span>
+                            <strong id="repAvg">0h 0m</strong>
+                        </div>
+                        <div class="report-row">
+                            <span>Longest Day</span>
+                            <strong id="repMax">—</strong>
+                        </div>
+                        <div class="report-row">
+                            <span>Best Rating Day</span>
+                            <strong id="repBest">—</strong>
+                        </div>
+                        <div class="report-row report-row-highlight">
+                            <span>Completion %</span>
+                            <strong id="repPercent">0%</strong>
+                        </div>
+                        <button class="btn btn-primary btn-full mt-3" onclick="exportCSV()">
+                            <i class="fa-solid fa-download"></i> Export Full Report (CSV)
+                        </button>
+                        <button class="btn btn-outline btn-full mt-2" onclick="printReport()">
+                            <i class="fa-solid fa-print"></i> Print Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ===================== FOOTER ===================== -->
+    <footer class="app-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <svg width="115" height="32" viewBox="0 0 320 90" xmlns="http://www.w3.org/2000/svg"
+                    style="display: block; margin-right: 4px;">
+                    <!-- Gray circle background behind POW -->
+                    <circle cx="64" cy="42" r="32" fill="#585e63" opacity="0.65" />
+                    <!-- Top yellow line -->
+                    <line x1="10" y1="18" x2="310" y2="18" stroke="#f5c518" stroke-width="6" stroke-linecap="square" />
+                    <!-- POWER text -->
+                    <text x="12" y="60" font-family="'Poppins', 'Montserrat', 'Arial Black', sans-serif"
+                        font-weight="900" font-size="42" fill="#f5c518" letter-spacing="0.5">POWER</text>
+                    <!-- 4 text -->
+                    <text x="180" y="82" font-family="'Poppins', 'Montserrat', 'Arial Black', sans-serif"
+                        font-weight="900" font-size="82" fill="#f5c518">4</text>
+                    <!-- ALL text -->
+                    <text x="228" y="60" font-family="'Poppins', 'Montserrat', 'Arial Black', sans-serif"
+                        font-weight="900" font-size="42" fill="#f5c518" letter-spacing="0.5">ALL</text>
+                    <!-- Bottom left line -->
+                    <line x1="10" y1="69" x2="172" y2="69" stroke="#f5c518" stroke-width="6" stroke-linecap="square" />
+                    <!-- Bottom right line -->
+                    <line x1="226" y1="69" x2="310" y2="69" stroke="#f5c518" stroke-width="6" stroke-linecap="square" />
+                    <!-- Trademark R -->
+                    <circle cx="308" cy="80" r="5" fill="none" stroke="#f5c518" stroke-width="1" />
+                    <text x="305" y="83" font-family="'Poppins', sans-serif" font-weight="bold" font-size="6"
+                        fill="#f5c518">R</text>
+                </svg>
+                <div>
+                    <strong>POWER 4 ALL, Inc.</strong>
+                    <span>Intern Hours Tracker</span>
+                </div>
+            </div>
+            <div class="footer-tagline">
+                <i class="fa-solid fa-sun"></i> Clean Power &nbsp;|&nbsp;
+                <i class="fa-solid fa-droplet"></i> Clean Water &nbsp;|&nbsp;
+                <i class="fa-solid fa-earth-asia"></i> Better Tomorrow
+            </div>
+            <div class="footer-meta">
+                <a href="https://power4all.org" target="_blank">power4all.org</a>
+                &nbsp;·&nbsp; Data saved locally on your browser
+            </div>
+        </div>
+    </footer>
+
+    <!-- ===================== TOAST NOTIFICATION ===================== -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ===================== DELETE CONFIRM MODAL ===================== -->
+    <div class="modal-overlay" id="deleteModal" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-icon danger"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h3>Delete Entry?</h3>
+            <p>This action cannot be undone. Are you sure you want to delete this record?</p>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== EDIT MODAL ===================== -->
+    <div class="modal-overlay" id="editModal" style="display:none;">
+        <div class="modal-box edit-modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-pen"></i> Edit Entry</h3>
+                <button class="modal-close" onclick="closeEditModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="editDate" class="form-input" />
+                </div>
+                <div class="form-group">
+                    <label>Day Type</label>
+                    <select id="editType" class="form-input">
+                        <option value="regular">Regular Day</option>
+                        <option value="holiday">Holiday Work</option>
+                        <option value="makeup">Make-up Day</option>
+                        <option value="virtual">Virtual/Remote</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Time In</label>
+                    <input type="time" id="editTimeIn" class="form-input" />
+                </div>
+                <div class="form-group">
+                    <label>Time Out</label>
+                    <input type="time" id="editTimeOut" class="form-input" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Department</label>
+                <select id="editDept" class="form-input">
+                    <option value="">Select department...</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="Intelligent Systems">Intelligent Systems</option>
+                    <option value="Operations">Operations</option>
+                    <option value="Business Development">Business Development</option>
+                    <option value="Marketing & Communications">Marketing & Communications</option>
+                    <option value="Admin & Finance">Admin & Finance</option>
+                    <option value="Research & Development">Research & Development</option>
+                    <option value="Field Work">Field Work</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Task / Activity</label>
+                <textarea id="editTask" class="form-input form-textarea" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Key Learnings</label>
+                <textarea id="editLearning" class="form-input form-textarea" rows="2"></textarea>
+            </div>
+            <input type="hidden" id="editIndex" />
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveEdit()">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== RECORD DETAIL MODAL ===================== -->
+    <div class="modal-overlay" id="recordDetailModal" style="display:none;">
+        <div class="modal-box record-detail-box">
+
+            <!-- Unified Dark Header -->
+            <div class="record-report-header">
+                <div class="record-report-top-row">
+                    <span class="record-report-title"><i class="fa-solid fa-file-lines"></i> Daily Attendance Report</span>
+                    <button class="record-report-close" onclick="closeRecordModal()"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="record-report-hero-row">
+                    <div class="record-report-date-block">
+                        <span class="record-report-label">DATE</span>
+                        <span class="record-report-date" id="rptDate">—</span>
+                    </div>
+                    <div class="record-report-hours-block">
+                        <span class="record-report-hours" id="rptHours">0h 00m</span>
+                        <span class="record-report-label">NET HOURS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scrollable Body -->
+            <div class="record-detail-scroll">
+
+                <!-- Time Info Row -->
+                <div class="record-report-time-row">
+                    <div class="record-report-time-item">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        <div>
+                            <span class="record-report-time-label">TIME IN</span>
+                            <span class="record-report-time-val" id="rptTimeIn">—</span>
+                        </div>
+                    </div>
+                    <div class="record-report-time-divider"><i class="fa-solid fa-minus"></i></div>
+                    <div class="record-report-time-item">
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                        <div>
+                            <span class="record-report-time-label">TIME OUT</span>
+                            <span class="record-report-time-val" id="rptTimeOut">—</span>
+                        </div>
+                    </div>
+                    <div class="record-report-time-divider"><i class="fa-solid fa-utensils"></i></div>
+                    <div class="record-report-time-item">
+                        <i class="fa-solid fa-clock"></i>
+                        <div>
+                            <span class="record-report-time-label">GROSS TIME</span>
+                            <span class="record-report-time-val" id="rptGross">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Details Grid -->
+                <div class="record-report-details">
+                    <div class="record-report-detail-row" id="rptDeptRow">
+                        <span class="record-report-detail-label"><i class="fa-solid fa-building"></i> Department</span>
+                        <span class="record-report-detail-val" id="rptDept">—</span>
+                    </div>
+                    <div class="record-report-detail-row">
+                        <span class="record-report-detail-label"><i class="fa-solid fa-tag"></i> Day Type</span>
+                        <span class="record-report-detail-val" id="rptType">—</span>
+                    </div>
+                    <div class="record-report-detail-row">
+                        <span class="record-report-detail-label"><i class="fa-solid fa-star"></i> Mood / Rating</span>
+                        <span class="record-report-detail-val" id="rptMood">—</span>
+                    </div>
+                </div>
+
+                <!-- Activity Section -->
+                <div class="record-report-section">
+                    <div class="record-report-section-label"><i class="fa-solid fa-list-check"></i> Task / Activity</div>
+                    <div class="record-report-section-body" id="rptTask">—</div>
+                </div>
+
+                <!-- Learnings Section -->
+                <div class="record-report-section" id="rptLearningSection">
+                    <div class="record-report-section-label"><i class="fa-solid fa-lightbulb"></i> Key Learnings</div>
+                    <div class="record-report-section-body" id="rptLearning">—</div>
+                </div>
+
+                <!-- Lunch Deduction Note -->
+                <div class="record-report-lunch-note">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>1-hour lunch break deducted from gross time</span>
+                </div>
+
+            </div>
+
+            <!-- Actions (pinned footer) -->
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeRecordModal()">Close</button>
+                <button class="btn btn-primary" id="rptEditBtn" onclick="">
+                    <i class="fa-solid fa-pen"></i> Edit Entry
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== AUTH SYSTEM MODAL OVERLAY ===================== -->
+    <div class="auth-overlay" id="authOverlay" style="display:none;">
+        <div class="auth-container">
+            <div class="auth-logo">
+                <svg width="180" height="50" viewBox="0 0 320 90" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="64" cy="42" r="32" fill="#585e63" opacity="0.65" />
+                    <line x1="10" y1="18" x2="310" y2="18" stroke="#f5c518" stroke-width="6" stroke-linecap="square" />
+                    <text x="12" y="60" font-family="'Poppins', sans-serif" font-weight="900" font-size="42" fill="#f5c518" letter-spacing="0.5">POWER</text>
+                    <text x="180" y="82" font-family="'Poppins', sans-serif" font-weight="900" font-size="82" fill="#f5c518">4</text>
+                    <text x="228" y="60" font-family="'Poppins', sans-serif" font-weight="900" font-size="42" fill="#f5c518" letter-spacing="0.5">ALL</text>
+                    <line x1="10" y1="69" x2="172" y2="69" stroke="#f5c518" stroke-width="6" stroke-linecap="square" />
+                    <line x1="226" y1="69" x2="310" y2="69" stroke="#f5c518" stroke-width="6" stroke-linecap="square" />
+                </svg>
+            </div>
+            
+            <div class="auth-header">
+                <h2 id="authTitle">Sign In</h2>
+                <p id="authSubtitle">Please enter your credentials to access the hours tracker.</p>
+            </div>
+
+            <form class="auth-form" onsubmit="handleAuthSubmit(event)">
+                <div class="auth-group">
+                    <label for="authEmail">Email Address</label>
+                    <div class="auth-input-wrapper">
+                        <i class="fa-solid fa-envelope"></i>
+                        <input type="email" id="authEmail" class="auth-input" required placeholder="name@power4all.org" />
+                    </div>
+                </div>
+                
+                <div class="auth-group">
+                    <label for="authPass">Password</label>
+                    <div class="auth-input-wrapper">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="authPass" class="auth-input" required placeholder="••••••••" />
+                        <i class="fa-solid fa-eye toggle-password" id="togglePasswordIcon" onclick="togglePasswordVisibility()"></i>
+                    </div>
+                </div>
+
+                <button type="submit" class="auth-submit-btn">
+                    <span id="authBtnLabel">Sign In</span>
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                </button>
+            </form>
+
+            <div class="auth-toggle">
+                <span id="authToggleMsg">Don't have an account?</span>
+                <a id="authToggleLink" onclick="toggleAuthMode()">Sign Up</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
