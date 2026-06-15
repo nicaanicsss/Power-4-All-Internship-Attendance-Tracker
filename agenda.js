@@ -589,6 +589,7 @@ function buildAgendaItemHtml(ag) {
             ${tags ? `<div class="ag-tags">${tags}</div>` : ''}
         </div>
         <div class="ag-actions">
+            ${(!ag.completed && (status === 'today' || status === 'overdue')) ? `<button class="ag-action-btn move" onclick="event.stopPropagation();moveToNextDay('${ag.id}')" title="Move to Next Day"><i class="fa-solid fa-forward-step"></i></button>` : ''}
             <button class="ag-action-btn edit" onclick="event.stopPropagation();openEditModal('${ag.id}')" title="Edit"><i class="fa-solid fa-pen"></i></button>
             <button class="ag-action-btn del" onclick="event.stopPropagation();openDeleteModal('${ag.id}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
         </div>
@@ -804,11 +805,48 @@ function openViewModal(id) {
     }
 
     document.getElementById('viewDeleteBtn').onclick = () => { closeViewModal(); openDeleteModal(id); };
+
+    // Show/hide Move to Next Day based on completion status
+    const moveBtnEl = document.getElementById('viewMoveBtn');
+    if (moveBtnEl) moveBtnEl.style.display = ag.completed ? 'none' : 'inline-flex';
+
     document.getElementById('viewModal').style.display = 'flex';
 }
 
 function closeViewModal() {
     document.getElementById('viewModal').style.display = 'none';
+}
+
+function moveToNextDayFromView() {
+    const id = document.getElementById('viewModalId').value;
+    moveToNextDay(id);
+    closeViewModal();
+}
+
+// Move an agenda item to the next calendar day (no new copy — just updates the date)
+function moveToNextDay(id) {
+    const idx = agendas.findIndex(a => a.id === id);
+    if (idx === -1) return;
+
+    const ag = agendas[idx];
+    if (ag.completed) {
+        showToast('Cannot move a completed agenda.', 'warning', 'fa-triangle-exclamation');
+        return;
+    }
+
+    // Parse current date and add exactly 1 day
+    const currentDate = new Date(ag.date + 'T00:00:00');
+    currentDate.setDate(currentDate.getDate() + 1);
+    const newDateStr = formatDateInput(currentDate);
+
+    agendas[idx] = { ...ag, date: newDateStr };
+    saveData();
+    renderCurrentView();
+    buildNotifications();
+    renderHeroStats();
+
+    const newDateDisplay = currentDate.toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' });
+    showToast(`"${ag.title}" moved to ${newDateDisplay}`, 'success', 'fa-forward-step');
 }
 
 function editFromView() {

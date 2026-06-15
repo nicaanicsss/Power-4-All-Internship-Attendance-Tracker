@@ -250,10 +250,27 @@ ul { list-style: none; }
 .btn-danger:hover { background: #b71c14; }
 .btn-danger-outline { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
 .btn-danger-outline:hover { background: var(--danger-light); }
+.btn-move { background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.35); color: #6366f1; }
+.btn-move:hover { background: #6366f1; color: white; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.25); }
 .btn-sm { padding: 0.35rem 0.9rem; font-size: 0.78rem; }
 .btn-full { width: 100%; justify-content: center; }
 .icon-btn { background: var(--gray-100); border: 1px solid var(--gray-200); color: var(--gray-600); width: 32px; height: 32px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; transition: var(--transition); }
 .icon-btn:hover { background: var(--gray-200); }
+
+/* Agenda item inline action buttons */
+.ag-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; opacity: 0; transition: opacity 0.2s ease; }
+.agenda-item:hover .ag-actions { opacity: 1; }
+.ag-action-btn {
+    width: 28px; height: 28px; border-radius: 6px; border: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; transition: var(--transition); cursor: pointer;
+}
+.ag-action-btn.edit { background: rgba(245,197,24,0.1); color: var(--p4a-yellow-dark); }
+.ag-action-btn.edit:hover { background: var(--p4a-yellow); color: var(--p4a-dark); }
+.ag-action-btn.del { background: rgba(217,48,37,0.1); color: var(--danger); }
+.ag-action-btn.del:hover { background: var(--danger); color: white; }
+.ag-action-btn.move { background: rgba(99,102,241,0.1); color: #6366f1; }
+.ag-action-btn.move:hover { background: #6366f1; color: white; }
 
 /* ==================== CARD ==================== */
 .card { background: var(--white); border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200); }
