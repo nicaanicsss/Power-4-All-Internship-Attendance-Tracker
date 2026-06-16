@@ -3,9 +3,61 @@
    JavaScript Logic
    ==================================================== */
 
+// ==================== SAFE STORAGE WRAPPERS ====================
+window.memoryStorage = window.memoryStorage || {};
+window.sessionMemoryStorage = window.sessionMemoryStorage || {};
+
+const safeLocalStorage = {
+    getItem(key) {
+        try {
+            return localStorage.getItem(key);
+        } catch (e) {
+            return window.memoryStorage[key] || null;
+        }
+    },
+    setItem(key, value) {
+        try {
+            localStorage.setItem(key, value);
+        } catch (e) {
+            window.memoryStorage[key] = String(value);
+        }
+    },
+    removeItem(key) {
+        try {
+            localStorage.removeItem(key);
+        } catch (e) {
+            delete window.memoryStorage[key];
+        }
+    }
+};
+
+const safeSessionStorage = {
+    getItem(key) {
+        try {
+            return sessionStorage.getItem(key);
+        } catch (e) {
+            return window.sessionMemoryStorage[key] || null;
+        }
+    },
+    setItem(key, value) {
+        try {
+            sessionStorage.setItem(key, value);
+        } catch (e) {
+            window.sessionMemoryStorage[key] = String(value);
+        }
+    },
+    removeItem(key) {
+        try {
+            sessionStorage.removeItem(key);
+        } catch (e) {
+            delete window.sessionMemoryStorage[key];
+        }
+    }
+};
+
 // ==================== DATA STORE ====================
 const STORAGE_KEY = 'p4a_agendas';
-let agendas = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let agendas = JSON.parse(safeLocalStorage.getItem(STORAGE_KEY) || '[]');
 let currentView = 'calendar';
 let calYear, calMonth;
 let selectedDateStr = null;
@@ -15,7 +67,7 @@ let lastAddedIds = []; // keeps track of last inserted IDs for instant Undone/re
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', () => {
     // Check authentication. Since index.html manages the login UI overlay, redirect there if unauthorized
-    const sessionUser = sessionStorage.getItem('p4a_logged_in_user');
+    const sessionUser = safeSessionStorage.getItem('p4a_logged_in_user');
     if (!sessionUser) {
         window.location.href = 'index.html';
         return;
@@ -44,7 +96,7 @@ function setDefaultDate() {
 
 // ==================== LOCAL STORAGE ====================
 function saveData() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(agendas));
+    safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(agendas));
 }
 
 // ==================== HELPERS ====================
@@ -132,7 +184,7 @@ function renderHeroStats() {
     document.getElementById('heroOverdue').textContent = activeTasks.filter(a => a.date < today).length;
 
     // Crosslink unlogged days logic
-    const records = JSON.parse(localStorage.getItem('p4a_intern_records') || '[]');
+    const records = JSON.parse(safeLocalStorage.getItem('p4a_intern_records') || '[]');
     const loggedDates = new Set(records.map(r => r.date));
     
     // Find all unique dates in agendas that are NOT completed and are in the past or today, but have NO record logged
@@ -589,7 +641,7 @@ function buildAgendaItemHtml(ag) {
             ${tags ? `<div class="ag-tags">${tags}</div>` : ''}
         </div>
         <div class="ag-actions">
-            ${(!ag.completed && (status === 'today' || status === 'overdue')) ? `<button class="ag-action-btn move" onclick="event.stopPropagation();moveToNextDay('${ag.id}')" title="Move to Next Day"><i class="fa-solid fa-forward-step"></i></button>` : ''}
+            ${(!ag.completed) ? `<button class="ag-action-btn move" onclick="event.stopPropagation();openMoveModal('${ag.id}')" title="Move to another day"><i class="fa-solid fa-share"></i></button>` : ''}
             <button class="ag-action-btn edit" onclick="event.stopPropagation();openEditModal('${ag.id}')" title="Edit"><i class="fa-solid fa-pen"></i></button>
             <button class="ag-action-btn del" onclick="event.stopPropagation();openDeleteModal('${ag.id}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
         </div>
@@ -817,36 +869,67 @@ function closeViewModal() {
     document.getElementById('viewModal').style.display = 'none';
 }
 
-function moveToNextDayFromView() {
+function openMoveModalFromView() {
     const id = document.getElementById('viewModalId').value;
-    moveToNextDay(id);
     closeViewModal();
+    openMoveModal(id);
 }
 
-// Move an agenda item to the next calendar day (no new copy — just updates the date)
-function moveToNextDay(id) {
-    const idx = agendas.findIndex(a => a.id === id);
-    if (idx === -1) return;
-
-    const ag = agendas[idx];
-    if (ag.completed) {
+// ==================== MOVE TO DATE ====================
+function openMoveModal(id) {
+    const ag = agendas.find(a => a.id === id);
+    if (!ag || ag.completed) {
         showToast('Cannot move a completed agenda.', 'warning', 'fa-triangle-exclamation');
         return;
     }
 
-    // Parse current date and add exactly 1 day
-    const currentDate = new Date(ag.date + 'T00:00:00');
-    currentDate.setDate(currentDate.getDate() + 1);
-    const newDateStr = formatDateInput(currentDate);
+    document.getElementById('moveTargetId').value = id;
+    document.getElementById('movingAgendaTitle').innerHTML =
+        `Moving: <strong>${escHtml(ag.title)}</strong><br><span style="font-size:0.78rem;color:var(--gray-500);">Currently on ${formatDateShort(ag.date)}</span>`;
 
+    // Default the date picker to tomorrow
+    const tomorrow = new Date(ag.date + 'T00:00:00');
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('moveTargetDate').value = formatDateInput(tomorrow);
+    document.getElementById('moveTargetDate').min = todayStr();
+
+    document.getElementById('moveModal').style.display = 'flex';
+}
+
+function closeMoveModal() {
+    document.getElementById('moveModal').style.display = 'none';
+}
+
+// Quick shortcut buttons: set the date input to N days from today
+function setMoveDate(daysFromToday) {
+    const d = new Date();
+    d.setDate(d.getDate() + daysFromToday);
+    document.getElementById('moveTargetDate').value = formatDateInput(d);
+}
+
+function confirmMoveAgenda() {
+    const id = document.getElementById('moveTargetId').value;
+    const newDateStr = document.getElementById('moveTargetDate').value;
+
+    if (!newDateStr) {
+        showToast('Please select a date.', 'warning', 'fa-triangle-exclamation');
+        return;
+    }
+
+    const idx = agendas.findIndex(a => a.id === id);
+    if (idx === -1) return;
+
+    const ag = agendas[idx];
+    const oldDate = ag.date;
     agendas[idx] = { ...ag, date: newDateStr };
     saveData();
+    closeMoveModal();
     renderCurrentView();
     buildNotifications();
     renderHeroStats();
 
-    const newDateDisplay = currentDate.toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' });
-    showToast(`"${ag.title}" moved to ${newDateDisplay}`, 'success', 'fa-forward-step');
+    const newDateDisplay = new Date(newDateStr + 'T00:00:00').toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    showToast(`"${ag.title}" moved to ${newDateDisplay}`, 'success', 'fa-calendar-check');
 }
 
 function editFromView() {

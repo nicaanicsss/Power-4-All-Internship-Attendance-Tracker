@@ -3,6 +3,58 @@
    JavaScript — Full Feature App Logic
    ==================================================== */
 
+// ==================== SAFE STORAGE WRAPPERS ====================
+window.memoryStorage = window.memoryStorage || {};
+window.sessionMemoryStorage = window.sessionMemoryStorage || {};
+
+const safeLocalStorage = {
+    getItem(key) {
+        try {
+            return localStorage.getItem(key);
+        } catch (e) {
+            return window.memoryStorage[key] || null;
+        }
+    },
+    setItem(key, value) {
+        try {
+            localStorage.setItem(key, value);
+        } catch (e) {
+            window.memoryStorage[key] = String(value);
+        }
+    },
+    removeItem(key) {
+        try {
+            localStorage.removeItem(key);
+        } catch (e) {
+            delete window.memoryStorage[key];
+        }
+    }
+};
+
+const safeSessionStorage = {
+    getItem(key) {
+        try {
+            return sessionStorage.getItem(key);
+        } catch (e) {
+            return window.sessionMemoryStorage[key] || null;
+        }
+    },
+    setItem(key, value) {
+        try {
+            sessionStorage.setItem(key, value);
+        } catch (e) {
+            window.sessionMemoryStorage[key] = String(value);
+        }
+    },
+    removeItem(key) {
+        try {
+            sessionStorage.removeItem(key);
+        } catch (e) {
+            delete window.sessionMemoryStorage[key];
+        }
+    }
+};
+
 // ==================== APP STATE ====================
 const REQUIRED_HOURS = 240;
 const LUNCH_BREAK_MINS = 60; // 1-hour lunch break deducted daily (not counted toward 240hrs)
@@ -11,10 +63,23 @@ const INTERN_NAME_KEY = 'p4a_intern_name';
 const INTERN_DEPT_KEY = 'p4a_intern_dept';
 const INTERN_SCHOOL_KEY = 'p4a_intern_school';
 const INTERN_ID_KEY = 'p4a_intern_id';
+const TODO_KEY = 'p4a_intern_todos';
+const ACHIEVEMENTS_KEY = 'p4a_intern_achievements';
+
+const ACHIEVEMENTS_LIST = [
+    { id: 'first_log', title: 'First Steps', desc: 'Log your very first hours.', icon: 'fa-solid fa-shoe-prints' },
+    { id: 'tasks_10', title: 'Task Master', desc: 'Complete 10 To-Do tasks.', icon: 'fa-solid fa-list-check' },
+    { id: 'days_7', title: 'Dedicated', desc: 'Log attendance for 7 unique days.', icon: 'fa-solid fa-calendar-week' },
+    { id: 'hours_50', title: 'Half Century', desc: 'Reach 50 logged hours.', icon: 'fa-solid fa-hourglass-half' },
+    { id: 'hours_100', title: 'Century Club', desc: 'Reach 100 logged hours.', icon: 'fa-solid fa-100' },
+    { id: 'hours_240', title: 'Finish Line', desc: 'Complete the 240 hours requirement!', icon: 'fa-solid fa-graduation-cap' }
+];
 
 let records = [];
 let selectedMood = 0;
+let editSelectedMood = 0;
 let deleteTargetIndex = null;
+let unlockedAchievements = [];
 
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', () => {
@@ -30,12 +95,16 @@ document.addEventListener('DOMContentLoaded', () => {
     setupMoodButtons();
     setupMenuToggle();
     setupNavLinks();
+    loadTodos();
+    renderTodoList();
+    loadAchievements();
+    checkAchievements();
 });
 
 // ==================== DATA PERSISTENCE ====================
 function loadRecords() {
     try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = safeLocalStorage.getItem(STORAGE_KEY);
         records = stored ? JSON.parse(stored) : [];
     } catch (e) {
         records = [];
@@ -43,15 +112,16 @@ function loadRecords() {
 }
 
 function saveRecords() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    if (typeof checkAchievements === 'function') checkAchievements();
 }
 
 // ==================== PROFILE MANAGEMENT ====================
 function loadProfile() {
-    const name = localStorage.getItem(INTERN_NAME_KEY) || 'Nica Desacola';
-    const dept = localStorage.getItem(INTERN_DEPT_KEY) || 'Engineering';
-    const school = localStorage.getItem(INTERN_SCHOOL_KEY) || 'University of Manila';
-    const internId = localStorage.getItem(INTERN_ID_KEY) || 'P4A-2026-001';
+    const name = safeLocalStorage.getItem(INTERN_NAME_KEY) || 'Nica Desacola';
+    const dept = safeLocalStorage.getItem(INTERN_DEPT_KEY) || 'Engineering';
+    const school = safeLocalStorage.getItem(INTERN_SCHOOL_KEY) || 'University of Manila';
+    const internId = safeLocalStorage.getItem(INTERN_ID_KEY) || 'P4A-2026-001';
 
     // Set form fields
     const nameInput = document.getElementById('profName');
@@ -97,10 +167,10 @@ function saveProfile() {
 
     if (!name) { showToast('Name is required.', 'error'); return; }
 
-    localStorage.setItem(INTERN_NAME_KEY, name);
-    localStorage.setItem(INTERN_DEPT_KEY, dept);
-    localStorage.setItem(INTERN_SCHOOL_KEY, school);
-    localStorage.setItem(INTERN_ID_KEY, internId);
+    safeLocalStorage.setItem(INTERN_NAME_KEY, name);
+    safeLocalStorage.setItem(INTERN_DEPT_KEY, dept);
+    safeLocalStorage.setItem(INTERN_SCHOOL_KEY, school);
+    safeLocalStorage.setItem(INTERN_ID_KEY, internId);
 
     loadProfile();
     toggleProfileEdit(false);
@@ -290,7 +360,8 @@ function setupNavLinks() {
             if (link.getAttribute('href') === '#dashboard' ||
                 link.getAttribute('href') === '#log-hours' ||
                 link.getAttribute('href') === '#records' ||
-                link.getAttribute('href') === '#reports') {
+                link.getAttribute('href') === '#reports' ||
+                link.getAttribute('href') === '#todo') {
                 e.preventDefault();
             }
         });
@@ -766,14 +837,16 @@ function renderRecordsTable(filter = '') {
         return `
         <tr onclick="openRecordModal(${realIdx})">
             <td>${idx + 1}</td>
-            <td class="td-date">${formatDate(r.date)}</td>
+            <td class="td-date">
+                ${formatDate(r.date)}
+                <div class="td-day-of-week">${new Date(r.date).toLocaleDateString('en-PH', { weekday: 'long' })}</div>
+            </td>
             <td class="td-time">${formatTime(r.timeIn)}</td>
             <td class="td-time">${formatTime(r.timeOut)}</td>
             <td class="td-hours">
                 ${minutesToHM(r.durationMins)}
                 <div class="td-gross">${minutesToHM(gross)} gross</div>
             </td>
-            <td>${r.dept ? `<span class="dept-tag">${r.dept}</span>` : '<span style="color:var(--gray-300)">—</span>'}</td>
             <td class="td-task" title="${escapeHtml(r.task)}">${escapeHtml(r.task)}</td>
             <td class="rating-emoji">${r.mood ? moodEmoji(r.mood) : '—'}</td>
             <td onclick="event.stopPropagation()">
@@ -834,6 +907,19 @@ function openEditModal(idx) {
     document.getElementById('editLearning').value = r.learning || '';
     document.getElementById('editType').value = r.type || 'regular';
     document.getElementById('editIndex').value = idx;
+
+    // Pre-select the existing mood
+    editSelectedMood = r.mood || 0;
+    document.querySelectorAll('.edit-mood-btn').forEach(btn => {
+        btn.classList.toggle('selected', parseInt(btn.dataset.mood) === editSelectedMood);
+        // Set up click handler (re-assign to avoid duplicates)
+        btn.onclick = () => {
+            editSelectedMood = parseInt(btn.dataset.mood);
+            document.querySelectorAll('.edit-mood-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        };
+    });
+
     document.getElementById('editModal').style.display = 'flex';
 }
 
@@ -859,7 +945,7 @@ function saveEdit() {
     const durationMins = calcDuration(timeIn, timeOut);
     if (grossMins <= LUNCH_BREAK_MINS) { showToast('Work hours must be more than 1 hour (lunch break).', 'error'); return; }
 
-    records[idx] = { ...records[idx], date, timeIn, timeOut, grossMins, durationMins, task, dept, learning, type };
+    records[idx] = { ...records[idx], date, timeIn, timeOut, grossMins, durationMins, task, dept, learning, type, mood: editSelectedMood };
     records.sort((a, b) => new Date(b.date) - new Date(a.date));
     saveRecords();
     updateAllUI();
@@ -1133,10 +1219,10 @@ function printReport() {
     const pct = Math.min(100, Math.round((totalMins / (REQUIRED_HOURS * 60)) * 100));
     const remainingMins = Math.max(0, REQUIRED_HOURS * 60 - totalMins);
 
-    const name = localStorage.getItem(INTERN_NAME_KEY) || 'Nica Desacola';
-    const dept = localStorage.getItem(INTERN_DEPT_KEY) || 'Engineering';
-    const school = localStorage.getItem(INTERN_SCHOOL_KEY) || 'University of Manila';
-    const internId = localStorage.getItem(INTERN_ID_KEY) || 'P4A-2026-001';
+    const name = safeLocalStorage.getItem(INTERN_NAME_KEY) || 'Nica Desacola';
+    const dept = safeLocalStorage.getItem(INTERN_DEPT_KEY) || 'Engineering';
+    const school = safeLocalStorage.getItem(INTERN_SCHOOL_KEY) || 'University of Manila';
+    const internId = safeLocalStorage.getItem(INTERN_ID_KEY) || 'P4A-2026-001';
 
     const tableRows = records.map((r, i) => {
         const dateStr = formatDate(r.date);
@@ -1508,9 +1594,10 @@ function showToast(message, type = 'success') {
 
 // ==================== AUTHENTICATION MANAGEMENT ====================
 let isSignUpMode = false;
+let isAdminMode = false;
 
 function checkAuthStatus() {
-    const sessionUser = sessionStorage.getItem('p4a_logged_in_user');
+    const sessionUser = safeSessionStorage.getItem('p4a_logged_in_user');
     const overlay = document.getElementById('authOverlay');
     const logoutBtn = document.getElementById('logoutBtn');
 
@@ -1523,30 +1610,62 @@ function checkAuthStatus() {
     }
 }
 
-function toggleAuthMode() {
-    isSignUpMode = !isSignUpMode;
+function setAuthMode(mode) {
+    isSignUpMode = (mode === 'signup');
+    isAdminMode = (mode === 'admin');
+
     const title = document.getElementById('authTitle');
     const subtitle = document.getElementById('authSubtitle');
     const btnLabel = document.getElementById('authBtnLabel');
     const toggleMsg = document.getElementById('authToggleMsg');
     const toggleLink = document.getElementById('authToggleLink');
+    const adminToggle = document.getElementById('adminToggleLink');
+    const passwordRules = document.getElementById('passwordRules');
 
-    if (isSignUpMode) {
-        title.textContent = 'Create Account';
-        subtitle.textContent = 'Register an account to start tracking your internship.';
-        btnLabel.textContent = 'Sign Up';
-        toggleMsg.textContent = 'Already have an account?';
-        toggleLink.textContent = 'Sign In';
-        document.getElementById('passwordRules').classList.add('visible');
-    } else {
-        title.textContent = 'Sign In';
-        subtitle.textContent = 'Please enter your credentials to access the hours tracker.';
-        btnLabel.textContent = 'Sign In';
-        toggleMsg.textContent = "Don't have an account?";
-        toggleLink.textContent = 'Sign Up';
-        document.getElementById('passwordRules').classList.remove('visible');
+    if (mode === 'signup') {
+        if (title) title.textContent = 'Create Account';
+        if (subtitle) subtitle.textContent = 'Register an account to start tracking your internship.';
+        if (btnLabel) btnLabel.textContent = 'Sign Up';
+        if (toggleMsg) toggleMsg.textContent = 'Already have an account?';
+        if (toggleLink) {
+            toggleLink.textContent = 'Sign In';
+            toggleLink.setAttribute('onclick', "setAuthMode('signin')");
+        }
+        if (passwordRules) passwordRules.classList.add('visible');
+        if (adminToggle) {
+            adminToggle.style.display = 'none';
+            if (adminToggle.parentElement) adminToggle.parentElement.style.display = 'none';
+        }
+    } else if (mode === 'signin') {
+        if (title) title.textContent = 'Sign In';
+        if (subtitle) subtitle.textContent = 'Please enter your credentials to access the hours tracker.';
+        if (btnLabel) btnLabel.textContent = 'Sign In';
+        if (toggleMsg) toggleMsg.textContent = "Don't have an account?";
+        if (toggleLink) {
+            toggleLink.textContent = 'Sign Up';
+            toggleLink.setAttribute('onclick', "setAuthMode('signup')");
+        }
+        if (passwordRules) passwordRules.classList.remove('visible');
+        if (adminToggle) {
+            adminToggle.style.display = 'inline';
+            if (adminToggle.parentElement) adminToggle.parentElement.style.display = 'block';
+        }
+    } else if (mode === 'admin') {
+        if (title) title.textContent = 'Admin Portal';
+        if (subtitle) subtitle.textContent = 'Log in with administrator credentials.';
+        if (btnLabel) btnLabel.textContent = 'Admin Login';
+        if (toggleMsg) toggleMsg.textContent = 'Are you an intern?';
+        if (toggleLink) {
+            toggleLink.textContent = 'Intern Login';
+            toggleLink.setAttribute('onclick', "setAuthMode('signin')");
+        }
+        if (passwordRules) passwordRules.classList.remove('visible');
+        if (adminToggle) {
+            adminToggle.style.display = 'none';
+            if (adminToggle.parentElement) adminToggle.parentElement.style.display = 'none';
+        }
     }
-    // Clear any lingering errors when switching modes
+
     clearAuthFieldError('authEmail');
     clearAuthFieldError('authPass');
 }
@@ -1647,7 +1766,7 @@ function handleAuthSubmit(e) {
         return;
     }
 
-    const users = JSON.parse(localStorage.getItem('p4a_users') || '[]');
+    const users = JSON.parse(safeLocalStorage.getItem('p4a_users') || '[]');
 
     if (isSignUpMode) {
         // Sign Up check
@@ -1660,22 +1779,34 @@ function handleAuthSubmit(e) {
 
         // Add new user
         users.push({ email, password });
-        localStorage.setItem('p4a_users', JSON.stringify(users));
+        safeLocalStorage.setItem('p4a_users', JSON.stringify(users));
         showToast('Sign up successful! Please sign in.', 'success');
         
         // Auto-switch to login
-        toggleAuthMode();
+        setAuthMode('signin');
         document.getElementById('authPass').value = '';
     } else {
         // Sign In check
         const matchedUser = users.find(u => u.email === email && u.password === password);
         
+        if (isAdminMode) {
+            // Check if admin
+            if (email === 'admin@power4all.org' && password === 'admin') {
+                safeSessionStorage.setItem('p4a_logged_in_admin', 'true');
+                window.location.href = 'admin.html';
+                return;
+            } else {
+                showAuthFieldError('authEmail', 'Invalid admin credentials.');
+                shakeAuthForm();
+                return;
+            }
+        }
+
         // If empty users list (first run), seed a default account or let them log in
-        if (!matchedUser && users.length === 0 && email === 'admin@power4all.org' && password === 'admin') {
-            // Seed a default admin account
+        if (!matchedUser && users.length === 0 && email === 'intern@power4all.org' && password === 'intern') {
             users.push({ email, password });
-            localStorage.setItem('p4a_users', JSON.stringify(users));
-            sessionStorage.setItem('p4a_logged_in_user', email);
+            safeLocalStorage.setItem('p4a_users', JSON.stringify(users));
+            safeSessionStorage.setItem('p4a_logged_in_user', email);
             checkAuthStatus();
             if (typeof showSection === 'function') showSection('dashboard');
             showToast('Welcome to Power 4 All!', 'success');
@@ -1683,7 +1814,7 @@ function handleAuthSubmit(e) {
         }
 
         if (matchedUser) {
-            sessionStorage.setItem('p4a_logged_in_user', email);
+            safeSessionStorage.setItem('p4a_logged_in_user', email);
             checkAuthStatus();
             if (typeof showSection === 'function') showSection('dashboard');
             showToast('Logged in successfully.', 'success');
@@ -1696,7 +1827,7 @@ function handleAuthSubmit(e) {
 }
 
 function logout() {
-    sessionStorage.removeItem('p4a_logged_in_user');
+    safeSessionStorage.removeItem('p4a_logged_in_user');
     checkAuthStatus();
     showToast('Logged out successfully.', 'info');
 }
@@ -1725,7 +1856,7 @@ function resetInactivityTimer() {
     clearTimeout(inactivityTimeout);
     
     // Only set the timer if user is currently logged in
-    const sessionUser = sessionStorage.getItem('p4a_logged_in_user');
+    const sessionUser = safeSessionStorage.getItem('p4a_logged_in_user');
     if (sessionUser) {
         inactivityTimeout = setTimeout(() => {
             logout();
@@ -1740,3 +1871,255 @@ function resetInactivityTimer() {
 });
 
 
+// ==================== TO-DO FEATURE ====================
+let todos = [];
+let todoFilter = 'all';
+
+function loadTodos() {
+    try {
+        const stored = safeLocalStorage.getItem(TODO_KEY);
+        todos = stored ? JSON.parse(stored) : [];
+    } catch (e) {
+        todos = [];
+    }
+}
+
+function saveTodos() {
+    safeLocalStorage.setItem(TODO_KEY, JSON.stringify(todos));
+    if (typeof checkAchievements === 'function') checkAchievements();
+}
+
+function addTodoItem() {
+    const input = document.getElementById('todoInput');
+    const priority = document.getElementById('todoPriority').value;
+    const category = document.getElementById('todoCategory').value;
+    const text = input.value.trim();
+
+    if (!text) {
+        showToast('Please enter a task.', 'error');
+        input.focus();
+        return;
+    }
+
+    const todo = {
+        id: Date.now(),
+        text,
+        priority,
+        category,
+        done: false,
+        createdAt: new Date().toISOString()
+    };
+
+    todos.unshift(todo);
+    saveTodos();
+    input.value = '';
+    document.getElementById('todoPriority').value = 'normal';
+    document.getElementById('todoCategory').value = 'general';
+    renderTodoList();
+    showToast('✅ Task added!', 'success');
+}
+
+function toggleTodo(id) {
+    const todo = todos.find(t => t.id === id);
+    if (!todo) return;
+    todo.done = !todo.done;
+    todo.completedAt = todo.done ? new Date().toISOString() : null;
+    saveTodos();
+    renderTodoList();
+}
+
+function deleteTodo(id) {
+    todos = todos.filter(t => t.id !== id);
+    saveTodos();
+    renderTodoList();
+    showToast('Task removed.', 'warning');
+}
+
+function clearDoneTodos() {
+    const doneCount = todos.filter(t => t.done).length;
+    if (doneCount === 0) { showToast('No completed tasks to clear.', 'info'); return; }
+    todos = todos.filter(t => !t.done);
+    saveTodos();
+    renderTodoList();
+    showToast(`🧹 Cleared ${doneCount} completed task${doneCount !== 1 ? 's' : ''}.`, 'success');
+}
+
+function filterTodos(filter) {
+    todoFilter = filter;
+    // Update tab active states
+    ['all', 'pending', 'done'].forEach(f => {
+        const tab = document.getElementById(`tab-${f}`);
+        if (tab) tab.classList.toggle('active', f === filter);
+    });
+    renderTodoList();
+}
+
+function getTodoPriorityMeta(priority) {
+    const map = {
+        high: { label: 'High', icon: '🔴', cls: 'priority-high' },
+        normal: { label: 'Normal', icon: '🔵', cls: 'priority-normal' },
+        low: { label: 'Low', icon: '⚪', cls: 'priority-low' }
+    };
+    return map[priority] || map.normal;
+}
+
+function getTodoCategoryMeta(category) {
+    const map = {
+        general:  { label: 'General',  icon: '📋' },
+        work:     { label: 'Work Task', icon: '💼' },
+        learning: { label: 'Learning',  icon: '📚' },
+        admin:    { label: 'Admin',     icon: '🗂️' },
+        meeting:  { label: 'Meeting',   icon: '🤝' }
+    };
+    return map[category] || map.general;
+}
+
+function renderTodoList() {
+    const list = document.getElementById('todoList');
+    const empty = document.getElementById('todoEmpty');
+    if (!list) return;
+
+    // Update stats
+    const total = todos.length;
+    const done = todos.filter(t => t.done).length;
+    const pending = total - done;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+    const statTotal = document.getElementById('todoStatTotal');
+    const statPending = document.getElementById('todoStatPending');
+    const statDone = document.getElementById('todoStatDone');
+    const progressFill = document.getElementById('todoProgressFill');
+    const progressLabel = document.getElementById('todoProgressLabel');
+
+    if (statTotal) statTotal.textContent = total;
+    if (statPending) statPending.textContent = pending;
+    if (statDone) statDone.textContent = done;
+    if (progressFill) progressFill.style.width = `${pct}%`;
+    if (progressLabel) progressLabel.textContent = `${pct}% complete`;
+
+    // Filter
+    let filtered = todos;
+    if (todoFilter === 'pending') filtered = todos.filter(t => !t.done);
+    if (todoFilter === 'done')    filtered = todos.filter(t => t.done);
+
+    if (filtered.length === 0) {
+        list.innerHTML = '';
+        if (empty) empty.style.display = 'flex';
+        return;
+    }
+    if (empty) empty.style.display = 'none';
+
+    list.innerHTML = filtered.map(todo => {
+        const pri = getTodoPriorityMeta(todo.priority);
+        const cat = getTodoCategoryMeta(todo.category);
+        const dateStr = todo.createdAt
+            ? new Date(todo.createdAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
+            : '';
+        return `
+        <div class="todo-item ${todo.done ? 'todo-done' : ''} ${pri.cls}" data-id="${todo.id}">
+            <button class="todo-check-btn" onclick="toggleTodo(${todo.id})" title="${todo.done ? 'Mark as pending' : 'Mark as done'}">
+                <i class="fa-${todo.done ? 'solid fa-circle-check' : 'regular fa-circle'}"></i>
+            </button>
+            <div class="todo-item-body">
+                <span class="todo-item-text ${todo.done ? 'todo-text-done' : ''}">${escapeHtml(todo.text)}</span>
+                <div class="todo-item-meta">
+                    <span class="todo-cat-tag">${cat.icon} ${cat.label}</span>
+                    <span class="todo-pri-tag ${pri.cls}">${pri.icon} ${pri.label}</span>
+                    ${dateStr ? `<span class="todo-date-tag"><i class="fa-regular fa-calendar"></i> ${dateStr}</span>` : ''}
+                    ${todo.done && todo.completedAt ? `<span class="todo-done-tag"><i class="fa-solid fa-check"></i> Done</span>` : ''}
+                </div>
+            </div>
+            <button class="todo-delete-btn" onclick="deleteTodo(${todo.id})" title="Delete task">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </div>`;
+    }).join('');
+}
+
+// ==================== ACHIEVEMENTS / TROPHY CASE ====================
+function loadAchievements() {
+    try {
+        const stored = safeLocalStorage.getItem(ACHIEVEMENTS_KEY);
+        unlockedAchievements = stored ? JSON.parse(stored) : [];
+    } catch (e) {
+        unlockedAchievements = [];
+    }
+}
+
+function saveAchievements() {
+    safeLocalStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(unlockedAchievements));
+}
+
+function checkAchievements() {
+    let newlyUnlocked = false;
+
+    // Calculate metrics
+    const totalMins = typeof getTotalMinutes === 'function' ? getTotalMinutes() : 0;
+    const totalHours = totalMins / 60;
+    const uniqueDays = new Set(records.map(r => r.date)).size;
+    const doneTasks = todos.filter(t => t.done).length;
+
+    // Helper to unlock
+    const unlock = (id) => {
+        if (!unlockedAchievements.includes(id)) {
+            unlockedAchievements.push(id);
+            newlyUnlocked = true;
+            
+            // Show toast for newly unlocked badge
+            const badgeInfo = ACHIEVEMENTS_LIST.find(a => a.id === id);
+            if (badgeInfo) {
+                showToast(`🏆 Achievement Unlocked: ${badgeInfo.title}!`, 'success');
+            }
+        }
+    };
+
+    // 1. First log
+    if (records.length > 0) unlock('first_log');
+    
+    // 2. Task Master (10 tasks)
+    if (doneTasks >= 10) unlock('tasks_10');
+    
+    // 3. Dedicated (7 unique days)
+    if (uniqueDays >= 7) unlock('days_7');
+    
+    // 4. Half Century (50 hours)
+    if (totalHours >= 50) unlock('hours_50');
+    
+    // 5. Century Club (100 hours)
+    if (totalHours >= 100) unlock('hours_100');
+    
+    // 6. Finish Line (240 hours)
+    if (totalHours >= REQUIRED_HOURS) unlock('hours_240');
+
+    if (newlyUnlocked) {
+        saveAchievements();
+    }
+    
+    renderAchievements();
+}
+
+function renderAchievements() {
+    const grid = document.getElementById('badgesGrid');
+    const subtitle = document.getElementById('trophySubtitle');
+    if (!grid) return;
+
+    if (subtitle) {
+        subtitle.textContent = `${unlockedAchievements.length} / ${ACHIEVEMENTS_LIST.length} Unlocked`;
+    }
+
+    grid.innerHTML = ACHIEVEMENTS_LIST.map(badge => {
+        const isUnlocked = unlockedAchievements.includes(badge.id);
+        const stateClass = isUnlocked ? 'unlocked' : 'locked';
+        
+        return `
+            <div class="badge-item ${stateClass}">
+                <div class="badge-icon-wrap">
+                    <i class="${badge.icon}"></i>
+                </div>
+                <div class="badge-title">${badge.title}</div>
+                <div class="badge-desc">${badge.desc}</div>
+                ${isUnlocked ? '<div class="badge-date">UNLOCKED</div>' : ''}
+            </div>
+        `;
+    }).join('');
+}

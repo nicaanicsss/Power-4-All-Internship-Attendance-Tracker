@@ -770,3 +770,49 @@ ul { list-style: none; }
     padding: 1px 6px;
     border-radius: 20px;
 }
+
+/* ==================== MOVE TO DATE MODAL ==================== */
+.move-modal-box {
+    max-width: 380px;
+    width: 100%;
+}
+
+.move-modal-desc {
+    font-size: 0.85rem;
+    color: var(--gray-700);
+    line-height: 1.5;
+    padding: 0.75rem 1rem;
+    background: var(--gray-50);
+    border-radius: var(--radius-md);
+    border-left: 3px solid #6366f1;
+}
+
+.move-quick-btns {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.move-quick-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0.3rem 0.85rem;
+    border-radius: 20px;
+    border: 1px solid rgba(99,102,241,0.3);
+    background: rgba(99,102,241,0.07);
+    color: #6366f1;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: var(--font-main);
+}
+
+.move-quick-btn:hover {
+    background: #6366f1;
+    color: white;
+    border-color: #6366f1;
+}
+

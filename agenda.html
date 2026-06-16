@@ -367,8 +367,8 @@
             </div>
             <div class="modal-actions">
                 <button class="btn btn-outline" onclick="closeViewModal()">Close</button>
-                <button class="btn btn-move" id="viewMoveBtn" onclick="moveToNextDayFromView()" title="Move this agenda to the next day">
-                    <i class="fa-solid fa-forward-step"></i> Move to Next Day
+                <button class="btn btn-move" id="viewMoveBtn" onclick="openMoveModalFromView()" title="Move this agenda to another day">
+                    <i class="fa-solid fa-share"></i> Move to...
                 </button>
                 <button class="btn btn-outline" id="viewEditBtn" onclick="editFromView()">
                     <i class="fa-solid fa-pen"></i> Edit
@@ -378,6 +378,35 @@
                 </button>
             </div>
             <input type="hidden" id="viewModalId" />
+        </div>
+    </div>
+
+    <!-- ===================== MOVE TO DATE MODAL ===================== -->
+    <div class="modal-overlay" id="moveModal" style="display:none;">
+        <div class="modal-box modal-box-sm move-modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-share"></i> Move Agenda</h3>
+                <button class="modal-close" onclick="closeMoveModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="move-modal-desc" id="movingAgendaTitle"></p>
+                <div class="form-group" style="margin-top:1rem;">
+                    <label for="moveTargetDate" style="font-size:0.82rem;font-weight:600;color:var(--gray-700);margin-bottom:4px;display:block;">Select New Date</label>
+                    <input type="date" id="moveTargetDate" class="form-input" />
+                </div>
+                <div class="move-quick-btns">
+                    <button class="move-quick-btn" onclick="setMoveDate(1)"><i class="fa-solid fa-forward-step"></i> Tomorrow</button>
+                    <button class="move-quick-btn" onclick="setMoveDate(2)">+2 Days</button>
+                    <button class="move-quick-btn" onclick="setMoveDate(7)"><i class="fa-solid fa-calendar-week"></i> Next Week</button>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeMoveModal()">Cancel</button>
+                <button class="btn btn-move" onclick="confirmMoveAgenda()">
+                    <i class="fa-solid fa-check"></i> Move Agenda
+                </button>
+            </div>
+            <input type="hidden" id="moveTargetId" />
         </div>
     </div>
 

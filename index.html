@@ -65,6 +65,9 @@
                 <a href="#dashboard" class="nav-link active" id="nav-dashboard" onclick="showSection('dashboard')">
                     <i class="fa-solid fa-gauge-high"></i> Dashboard
                 </a>
+                <a href="#todo" class="nav-link" id="nav-todo" onclick="showSection('todo')">
+                    <i class="fa-solid fa-list-check"></i> To-Do
+                </a>
                 <a href="#log-hours" class="nav-link" id="nav-log" onclick="showSection('log')">
                     <i class="fa-solid fa-clock"></i> Log Hours
                 </a>
@@ -91,6 +94,7 @@
         <div class="mobile-nav" id="mobileNav">
             <a href="#" class="nav-link" onclick="showSection('dashboard'); closeMobileNav()"><i
                     class="fa-solid fa-gauge-high"></i> Dashboard</a>
+            <a href="#" class="nav-link" onclick="showSection('todo'); closeMobileNav()"><i class="fa-solid fa-list-check"></i> To-Do</a>
             <a href="#" class="nav-link" onclick="showSection('log'); closeMobileNav()"><i
                     class="fa-solid fa-clock"></i> Log Hours</a>
             <a href="#" class="nav-link" onclick="showSection('records'); closeMobileNav()"><i
@@ -527,7 +531,6 @@
                                 <th><i class="fa-solid fa-arrow-right-from-bracket"></i> Time In</th>
                                 <th><i class="fa-solid fa-arrow-right-to-bracket"></i> Time Out</th>
                                 <th class="sortable" onclick="sortRecords('duration')"><i class="fa-solid fa-stopwatch"></i> Duration <i class="fa-solid fa-sort sort-icon" id="sort-duration"></i></th>
-                                <th><i class="fa-solid fa-building"></i> Dept.</th>
                                 <th><i class="fa-solid fa-list-check"></i> Activity</th>
                                 <th class="sortable" onclick="sortRecords('rating')"><i class="fa-solid fa-star"></i> Rating <i class="fa-solid fa-sort sort-icon" id="sort-rating"></i></th>
                                 <th><i class="fa-solid fa-gear"></i> Actions</th>
@@ -666,6 +669,105 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Trophy Case / Achievements -->
+            <div class="card trophy-case-card" style="margin-top: 1.5rem;">
+                <div class="card-header-row">
+                    <h3><i class="fa-solid fa-trophy"></i> Trophy Case</h3>
+                    <span class="card-subtitle" id="trophySubtitle">0 / 6 Unlocked</span>
+                </div>
+                <div class="badges-grid" id="badgesGrid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== TO-DO SECTION ===== -->
+        <section class="app-section" id="section-todo">
+            <div class="section-title-row">
+                <h2><i class="fa-solid fa-list-check"></i> To-Do List</h2>
+                <span class="section-desc">Manage your internship tasks and daily goals</span>
+            </div>
+
+            <div class="todo-layout">
+
+                <!-- Add Task Card -->
+                <div class="card todo-add-card">
+                    <h3 class="form-title"><i class="fa-solid fa-plus-circle"></i> Add New Task</h3>
+                    <div class="todo-input-row">
+                        <input type="text" id="todoInput" class="form-input todo-main-input"
+                            placeholder="What do you need to do today?" maxlength="200"
+                            onkeydown="if(event.key==='Enter') addTodoItem()" />
+                    </div>
+                    <div class="todo-meta-row">
+                        <select id="todoPriority" class="form-input todo-select">
+                            <option value="normal">🔵 Normal</option>
+                            <option value="high">🔴 High Priority</option>
+                            <option value="low">⚪ Low Priority</option>
+                        </select>
+                        <select id="todoCategory" class="form-input todo-select">
+                            <option value="general">📋 General</option>
+                            <option value="work">💼 Work Task</option>
+                            <option value="learning">📚 Learning</option>
+                            <option value="admin">🗂️ Admin</option>
+                            <option value="meeting">🤝 Meeting</option>
+                        </select>
+                        <button class="btn btn-primary todo-add-btn" onclick="addTodoItem()">
+                            <i class="fa-solid fa-plus"></i> Add Task
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats + Filter Bar -->
+                <div class="todo-stats-bar">
+                    <div class="todo-stat-pill">
+                        <span class="todo-stat-num" id="todoStatTotal">0</span>
+                        <span class="todo-stat-label">Total</span>
+                    </div>
+                    <div class="todo-stat-pill todo-stat-active">
+                        <span class="todo-stat-num" id="todoStatPending">0</span>
+                        <span class="todo-stat-label">Pending</span>
+                    </div>
+                    <div class="todo-stat-pill todo-stat-done">
+                        <span class="todo-stat-num" id="todoStatDone">0</span>
+                        <span class="todo-stat-label">Done</span>
+                    </div>
+                    <div class="todo-progress-wrap">
+                        <div class="todo-progress-bar">
+                            <div class="todo-progress-fill" id="todoProgressFill" style="width:0%"></div>
+                        </div>
+                        <span class="todo-progress-label" id="todoProgressLabel">0% complete</span>
+                    </div>
+                </div>
+
+                <!-- Filter Tabs -->
+                <div class="todo-filter-tabs">
+                    <button class="todo-tab active" id="tab-all" onclick="filterTodos('all')">
+                        <i class="fa-solid fa-bars"></i> All
+                    </button>
+                    <button class="todo-tab" id="tab-pending" onclick="filterTodos('pending')">
+                        <i class="fa-regular fa-circle"></i> Pending
+                    </button>
+                    <button class="todo-tab" id="tab-done" onclick="filterTodos('done')">
+                        <i class="fa-solid fa-circle-check"></i> Done
+                    </button>
+                    <button class="todo-tab todo-tab-danger" onclick="clearDoneTodos()">
+                        <i class="fa-solid fa-broom"></i> Clear Done
+                    </button>
+                </div>
+
+                <!-- Task List -->
+                <div class="card todo-list-card">
+                    <div id="todoList" class="todo-list">
+                        <!-- Populated by JS -->
+                    </div>
+                    <div id="todoEmpty" class="todo-empty-state" style="display:none;">
+                        <i class="fa-solid fa-clipboard-list"></i>
+                        <p>No tasks here!<br>Add your first task above to get started.</p>
+                    </div>
+                </div>
+
+            </div>
         </section>
     </main>
 
@@ -783,6 +885,16 @@
             <div class="form-group">
                 <label>Key Learnings</label>
                 <textarea id="editLearning" class="form-input form-textarea" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Day Rating</label>
+                <div class="mood-selector" id="editMoodSelector">
+                    <button type="button" class="mood-btn edit-mood-btn" data-mood="1" title="Poor">😞</button>
+                    <button type="button" class="mood-btn edit-mood-btn" data-mood="2" title="Okay">😐</button>
+                    <button type="button" class="mood-btn edit-mood-btn" data-mood="3" title="Good">🙂</button>
+                    <button type="button" class="mood-btn edit-mood-btn" data-mood="4" title="Great">😊</button>
+                    <button type="button" class="mood-btn edit-mood-btn" data-mood="5" title="Excellent!">🌟</button>
+                </div>
             </div>
             <input type="hidden" id="editIndex" />
             <div class="modal-actions">
@@ -948,7 +1060,11 @@
 
             <div class="auth-toggle">
                 <span id="authToggleMsg">Don't have an account?</span>
-                <a id="authToggleLink" onclick="toggleAuthMode()">Sign Up</a>
+                <a href="javascript:void(0)" id="authToggleLink" onclick="setAuthMode('signup')">Sign Up</a>
+            </div>
+            <div class="auth-toggle" style="margin-top: 10px;">
+                <span style="font-size: 0.8rem; color: var(--gray-400);">Are you an administrator?</span>
+                <a href="javascript:void(0)" onclick="setAuthMode('admin')" id="adminToggleLink" style="font-size: 0.8rem; text-decoration: underline;">Admin Login</a>
             </div>
         </div>
     </div>
