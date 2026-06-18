@@ -75,17 +75,100 @@ const ACHIEVEMENTS_LIST = [
     { id: 'hours_240', title: 'Finish Line', desc: 'Complete the 240 hours requirement!', icon: 'fa-solid fa-graduation-cap' }
 ];
 
+function exportData() {
+    const backup = {
+        records: safeLocalStorage.getItem(STORAGE_KEY),
+        name: safeLocalStorage.getItem(INTERN_NAME_KEY),
+        dept: safeLocalStorage.getItem(INTERN_DEPT_KEY),
+        school: safeLocalStorage.getItem(INTERN_SCHOOL_KEY),
+        intern_id: safeLocalStorage.getItem(INTERN_ID_KEY),
+        todos: safeLocalStorage.getItem(TODO_KEY),
+        achievements: safeLocalStorage.getItem(ACHIEVEMENTS_KEY),
+        agendas: safeLocalStorage.getItem('p4a_agendas')
+    };
+    
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `p4a_backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('✅ Backup downloaded successfully!', 'success');
+}
+
+async function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            showToast('Importing data... Please wait.', 'info');
+            
+            const res = await fetch(`${API_BASE}/import`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (res.ok) {
+                showToast('✅ Data imported successfully! Reloading...', 'success');
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showToast('Failed to import data.', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Invalid backup file.', 'error');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = ''; // Reset input
+}
+
 let records = [];
 let selectedMood = 0;
 let editSelectedMood = 0;
 let deleteTargetIndex = null;
 let unlockedAchievements = [];
 
+const API_BASE = '/api';
+let currentUser = null;
+
 // ==================== INIT ====================
-document.addEventListener('DOMContentLoaded', () => {
-    checkAuthStatus();
-    loadRecords();
-    loadProfile();
+document.addEventListener('DOMContentLoaded', async () => {
+    const isAuth = await checkSession();
+    if (!isAuth) {
+        document.getElementById('authOverlay').style.display = 'flex';
+        // Hide main app
+        document.querySelector('.main-container').style.display = 'none';
+        document.querySelector('.hero-banner').style.display = 'none';
+        return;
+    }
+    
+    if (currentUser && currentUser.role === 'admin') {
+        window.location.href = 'admin.html';
+        return;
+    }
+    
+    await loadDataFromBackend();
+    initApp();
+});
+
+function initApp() {
+    document.getElementById('authOverlay').style.display = 'none';
+    document.querySelector('.main-container').style.display = 'block';
+    document.querySelector('.hero-banner').style.display = 'flex';
+    
+    // Check if the floating widget logic needs to start
+    if (typeof initCountdownWidget === 'function') initCountdownWidget();
+    
+    updateProfileUI();
     setDefaultDates();
     setCurrentDate();
     updateAllUI();
@@ -95,86 +178,123 @@ document.addEventListener('DOMContentLoaded', () => {
     setupMoodButtons();
     setupMenuToggle();
     setupNavLinks();
-    loadTodos();
     renderTodoList();
-    loadAchievements();
     checkAchievements();
-});
+}
+
+async function checkSession() {
+    try {
+        const res = await fetch(`${API_BASE}/me`);
+        if (res.ok) {
+            const data = await res.json();
+            currentUser = data.user;
+            // Update auth switch to user profile
+            document.getElementById('logoutBtn').style.display = 'flex';
+            return true;
+        }
+    } catch (e) {
+        console.error(e);
+    }
+    return false;
+}
+
+async function loadDataFromBackend() {
+    try {
+        const [recRes, todoRes, achRes] = await Promise.all([
+            fetch(`${API_BASE}/records`),
+            fetch(`${API_BASE}/todos`),
+            fetch(`${API_BASE}/achievements`)
+        ]);
+        if (recRes.ok) records = await recRes.json();
+        if (todoRes.ok) todos = await todoRes.json();
+        if (achRes.ok) unlockedAchievements = await achRes.json();
+    } catch (e) {
+        console.error("Failed to load data", e);
+    }
+}
 
 // ==================== DATA PERSISTENCE ====================
 function loadRecords() {
-    try {
-        const stored = safeLocalStorage.getItem(STORAGE_KEY);
-        records = stored ? JSON.parse(stored) : [];
-    } catch (e) {
-        records = [];
-    }
+    // Automatically populated by loadDataFromBackend
 }
 
 function saveRecords() {
-    safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    fetch(`${API_BASE}/records`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(records)
+    });
     if (typeof checkAchievements === 'function') checkAchievements();
-}
-
-// ==================== PROFILE MANAGEMENT ====================
-function loadProfile() {
-    const name = safeLocalStorage.getItem(INTERN_NAME_KEY) || 'Nica Desacola';
-    const dept = safeLocalStorage.getItem(INTERN_DEPT_KEY) || 'Engineering';
-    const school = safeLocalStorage.getItem(INTERN_SCHOOL_KEY) || 'University of Manila';
-    const internId = safeLocalStorage.getItem(INTERN_ID_KEY) || 'P4A-2026-001';
-
-    // Set form fields
+}// ==================== PROFILE MANAGEMENT ====================
+function updateProfileUI() {
+    // Populate form fields with currentUser
     const nameInput = document.getElementById('profName');
-    const deptInput = document.getElementById('profDeptInput');
+    const deptInput = document.getElementById('profDept');
     const schoolInput = document.getElementById('profSchool');
     const idInput = document.getElementById('profId');
 
-    if (nameInput) nameInput.value = name;
-    if (deptInput) deptInput.value = dept;
-    if (schoolInput) schoolInput.value = school;
-    if (idInput) idInput.value = internId;
+    if (currentUser) {
+        if (nameInput) nameInput.value = currentUser.name || '';
+        if (deptInput) deptInput.value = currentUser.dept || '';
+        if (schoolInput) schoolInput.value = currentUser.school || '';
+        if (idInput) idInput.value = currentUser.intern_id || '';
 
-    // Set view elements
-    const dispName = document.getElementById('profDispName');
-    const dispDept = document.getElementById('profDispDept');
-    const dispSchool = document.getElementById('profDispSchool');
-    const dispId = document.getElementById('profDispId');
+        // Update display areas
+        const profNameDisplay = document.getElementById('profileNameDisplay');
+        const profDispDept = document.getElementById('profDispDept');
+        const profDispSchool = document.getElementById('profDispSchool');
+        const profDispId = document.getElementById('profDispId');
+        const heroName = document.getElementById('heroInternName');
+        const avatarInitials = document.getElementById('profAvatarInitials');
 
-    if (dispName) dispName.textContent = name;
-    if (dispDept) dispDept.innerHTML = `<i class="fa-solid fa-building"></i> ${dept}`;
-    if (dispSchool) dispSchool.innerHTML = `<i class="fa-solid fa-graduation-cap"></i> ${school}`;
-    if (dispId) dispId.innerHTML = `<i class="fa-solid fa-id-card"></i> ID: ${internId}`;
-
-    // Avatar initials
-    const avatar = document.getElementById('profileAvatar');
-    if (avatar) {
-        const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-        avatar.textContent = initials || 'ND';
-    }
-
-    // Set Welcome back name in Hero
-    const heroName = document.getElementById('heroInternName');
-    if (heroName) {
-        heroName.textContent = name.split(' ')[0];
+        if (profNameDisplay) profNameDisplay.textContent = currentUser.name || 'Intern';
+        if (profDispDept) profDispDept.innerHTML = `<i class="fa-solid fa-building"></i> ${currentUser.dept || 'Choose Department'}`;
+        if (profDispSchool) profDispSchool.innerHTML = `<i class="fa-solid fa-graduation-cap"></i> ${currentUser.school || 'Choose School'}`;
+        if (profDispId) profDispId.innerHTML = `<i class="fa-solid fa-id-card"></i> ${currentUser.intern_id ? 'ID: ' + currentUser.intern_id : 'ID: Pending'}`;
+        
+        if (heroName) heroName.textContent = (currentUser.name || 'Intern').split(' ')[0];
+        
+        if (avatarInitials && currentUser.name) {
+            const parts = currentUser.name.split(' ');
+            let initials = parts[0][0];
+            if (parts.length > 1) initials += parts[parts.length - 1][0];
+            avatarInitials.textContent = initials.toUpperCase();
+        }
     }
 }
 
-function saveProfile() {
+async function saveProfile() {
     const name = document.getElementById('profName').value.trim();
-    const dept = document.getElementById('profDeptInput').value;
+    const dept = document.getElementById('profDept').value.trim();
     const school = document.getElementById('profSchool').value.trim();
-    const internId = document.getElementById('profId').value.trim();
+    const id = document.getElementById('profId').value.trim();
 
-    if (!name) { showToast('Name is required.', 'error'); return; }
+    if (!name || !dept || !school) {
+        showToast('Please fill out Name, Department, and School.', 'error');
+        return;
+    }
 
-    safeLocalStorage.setItem(INTERN_NAME_KEY, name);
-    safeLocalStorage.setItem(INTERN_DEPT_KEY, dept);
-    safeLocalStorage.setItem(INTERN_SCHOOL_KEY, school);
-    safeLocalStorage.setItem(INTERN_ID_KEY, internId);
-
-    loadProfile();
-    toggleProfileEdit(false);
-    showToast('✅ Profile updated successfully!', 'success');
+    try {
+        const res = await fetch(`${API_BASE}/profile`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, dept, school, intern_id: id })
+        });
+        if (res.ok) {
+            currentUser.name = name;
+            currentUser.dept = dept;
+            currentUser.school = school;
+            currentUser.intern_id = id;
+            updateProfileUI();
+            toggleProfileEdit();
+            showToast('Profile updated successfully!', 'success');
+        } else {
+            showToast('Failed to update profile.', 'error');
+        }
+    } catch (e) {
+        console.error(e);
+        showToast('Server error.', 'error');
+    }
 }
 
 function toggleProfileEdit(show = null) {
@@ -1722,7 +1842,21 @@ function onPasswordInput() {
     });
 }
 
-function handleAuthSubmit(e) {
+function togglePasswordVisibility() {
+    const passInput = document.getElementById('authPass');
+    const toggleIcon = document.getElementById('togglePasswordIcon');
+    if (passInput.type === 'password') {
+        passInput.type = 'text';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+    } else {
+        passInput.type = 'password';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+    }
+}
+
+async function handleAuthSubmit(e) {
     e.preventDefault();
     clearAuthFieldError('authEmail');
     clearAuthFieldError('authPass');
@@ -1743,22 +1877,9 @@ function handleAuthSubmit(e) {
         hasError = true;
     }
 
-    // Password empty check
     if (!password) {
         showAuthFieldError('authPass', 'Password is required.');
         hasError = true;
-    } else if (isSignUpMode) {
-        // Password strength rules on Sign Up
-        if (password.length < 8) {
-            showAuthFieldError('authPass', 'Password must be at least 8 characters.');
-            hasError = true;
-        } else if (!/[A-Z]/.test(password)) {
-            showAuthFieldError('authPass', 'Password must include at least one uppercase letter.');
-            hasError = true;
-        } else if (!/[0-9]/.test(password)) {
-            showAuthFieldError('authPass', 'Password must include at least one number.');
-            hasError = true;
-        }
     }
 
     if (hasError) {
@@ -1766,70 +1887,61 @@ function handleAuthSubmit(e) {
         return;
     }
 
-    const users = JSON.parse(safeLocalStorage.getItem('p4a_users') || '[]');
+    const btn = document.querySelector('.auth-submit-btn');
+    const ogBtnText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
-    if (isSignUpMode) {
-        // Sign Up check
-        const userExists = users.some(u => u.email === email);
-        if (userExists) {
-            showAuthFieldError('authEmail', 'An account with this email already exists. Try signing in!');
-            shakeAuthForm();
-            return;
-        }
-
-        // Add new user
-        users.push({ email, password });
-        safeLocalStorage.setItem('p4a_users', JSON.stringify(users));
-        showToast('Sign up successful! Please sign in.', 'success');
-        
-        // Auto-switch to login
-        setAuthMode('signin');
-        document.getElementById('authPass').value = '';
-    } else {
-        // Sign In check
-        const matchedUser = users.find(u => u.email === email && u.password === password);
-        
-        if (isAdminMode) {
-            // Check if admin
-            if (email === 'admin@power4all.org' && password === 'admin') {
-                safeSessionStorage.setItem('p4a_logged_in_admin', 'true');
-                window.location.href = 'admin.html';
-                return;
+    try {
+        if (isSignUpMode) {
+            // Register
+            const res = await fetch(`${API_BASE}/register`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email, password, name: '', dept: '', school: '', intern_id: '' })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast('Sign up successful!', 'success');
+                window.location.reload();
             } else {
-                showAuthFieldError('authEmail', 'Invalid admin credentials.');
+                showAuthFieldError('authEmail', data.error || 'Failed to sign up.');
                 shakeAuthForm();
-                return;
+            }
+        } else {
+            // Login
+            const res = await fetch(`${API_BASE}/login`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast('Logged in successfully.', 'success');
+                if (data.user && data.user.role === 'admin') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.reload();
+                }
+            } else {
+                showAuthFieldError('authEmail', data.error || 'Invalid credentials.');
+                shakeAuthForm();
             }
         }
-
-        // If empty users list (first run), seed a default account or let them log in
-        if (!matchedUser && users.length === 0 && email === 'intern@power4all.org' && password === 'intern') {
-            users.push({ email, password });
-            safeLocalStorage.setItem('p4a_users', JSON.stringify(users));
-            safeSessionStorage.setItem('p4a_logged_in_user', email);
-            checkAuthStatus();
-            if (typeof showSection === 'function') showSection('dashboard');
-            showToast('Welcome to Power 4 All!', 'success');
-            return;
-        }
-
-        if (matchedUser) {
-            safeSessionStorage.setItem('p4a_logged_in_user', email);
-            checkAuthStatus();
-            if (typeof showSection === 'function') showSection('dashboard');
-            showToast('Logged in successfully.', 'success');
-        } else {
-            showAuthFieldError('authEmail', 'Email or password is incorrect.');
-            showAuthFieldError('authPass', 'Check your credentials and try again.');
-            shakeAuthForm();
-        }
+    } catch (e) {
+        showToast('Server error. Is the backend running?', 'error');
+        shakeAuthForm();
+    } finally {
+        btn.innerHTML = ogBtnText;
     }
 }
 
-function logout() {
-    safeSessionStorage.removeItem('p4a_logged_in_user');
-    checkAuthStatus();
-    showToast('Logged out successfully.', 'info');
+async function logout() {
+    try {
+        await fetch(`${API_BASE}/logout`, { method: 'POST' });
+        window.location.reload();
+    } catch(e) {
+        console.error(e);
+    }
 }
 
 // Reveal Password Toggle
@@ -1876,16 +1988,15 @@ let todos = [];
 let todoFilter = 'all';
 
 function loadTodos() {
-    try {
-        const stored = safeLocalStorage.getItem(TODO_KEY);
-        todos = stored ? JSON.parse(stored) : [];
-    } catch (e) {
-        todos = [];
-    }
+    // Automatically populated by loadDataFromBackend
 }
 
 function saveTodos() {
-    safeLocalStorage.setItem(TODO_KEY, JSON.stringify(todos));
+    fetch(`${API_BASE}/todos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(todos)
+    });
     if (typeof checkAchievements === 'function') checkAchievements();
 }
 
@@ -1907,6 +2018,7 @@ function addTodoItem() {
         priority,
         category,
         done: false,
+        cleared: false,
         createdAt: new Date().toISOString()
     };
 
@@ -1924,6 +2036,9 @@ function toggleTodo(id) {
     if (!todo) return;
     todo.done = !todo.done;
     todo.completedAt = todo.done ? new Date().toISOString() : null;
+    if (!todo.done) {
+        todo.cleared = false;
+    }
     saveTodos();
     renderTodoList();
 }
@@ -1936,9 +2051,10 @@ function deleteTodo(id) {
 }
 
 function clearDoneTodos() {
-    const doneCount = todos.filter(t => t.done).length;
+    const doneUncleared = todos.filter(t => t.done && !t.cleared);
+    const doneCount = doneUncleared.length;
     if (doneCount === 0) { showToast('No completed tasks to clear.', 'info'); return; }
-    todos = todos.filter(t => !t.done);
+    doneUncleared.forEach(t => t.cleared = true);
     saveTodos();
     renderTodoList();
     showToast(`🧹 Cleared ${doneCount} completed task${doneCount !== 1 ? 's' : ''}.`, 'success');
@@ -1999,6 +2115,7 @@ function renderTodoList() {
 
     // Filter
     let filtered = todos;
+    if (todoFilter === 'all')     filtered = todos.filter(t => !t.cleared);
     if (todoFilter === 'pending') filtered = todos.filter(t => !t.done);
     if (todoFilter === 'done')    filtered = todos.filter(t => t.done);
 
@@ -2047,7 +2164,11 @@ function loadAchievements() {
 }
 
 function saveAchievements() {
-    safeLocalStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(unlockedAchievements));
+    fetch(`${API_BASE}/achievements`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(unlockedAchievements)
+    });
 }
 
 function checkAchievements() {
@@ -2123,3 +2244,161 @@ function renderAchievements() {
         `;
     }).join('');
 }
+
+// ==================== FLOATING WIDGET LOGIC ====================
+let countdownInterval;
+
+function initCountdownWidget() {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const savedDate = safeLocalStorage.getItem('p4a_widget_date');
+    const savedTimeIn = safeLocalStorage.getItem('p4a_widget_time_in');
+    const isHidden = safeLocalStorage.getItem('p4a_widget_hidden');
+    
+    const timeInInput = document.getElementById('widgetTimeIn');
+    if (!timeInInput) return;
+
+    if (savedDate === todayStr && savedTimeIn) {
+        timeInInput.value = savedTimeIn;
+    } else {
+        // Default to 8 AM
+        timeInInput.value = "08:00";
+    }
+
+    if (isHidden === 'true') {
+        hideWidget();
+    } else {
+        unhideWidget();
+    }
+
+    // Set initial target
+    updateWidgetTarget();
+
+    // Start interval
+    if (countdownInterval) clearInterval(countdownInterval);
+    countdownInterval = setInterval(updateCountdownDisplay, 1000);
+}
+
+function hideWidget() {
+    safeLocalStorage.setItem('p4a_widget_hidden', 'true');
+    const widget = document.getElementById('countdownWidget');
+    const showBtn = document.getElementById('showWidgetBtn');
+    if (widget) widget.style.display = 'none';
+    if (showBtn) showBtn.style.display = 'flex';
+}
+
+function unhideWidget() {
+    safeLocalStorage.removeItem('p4a_widget_hidden');
+    const widget = document.getElementById('countdownWidget');
+    const showBtn = document.getElementById('showWidgetBtn');
+    if (widget) widget.style.display = 'flex';
+    if (showBtn) showBtn.style.display = 'none';
+}
+
+function updateWidgetTarget() {
+    const timeInInput = document.getElementById('widgetTimeIn');
+    const targetEl = document.getElementById('widgetTimeOutTarget');
+    if (!timeInInput || !targetEl) return;
+
+    const timeInVal = timeInInput.value;
+    if (!timeInVal) return;
+
+    // Save for today
+    const todayStr = new Date().toISOString().split('T')[0];
+    safeLocalStorage.setItem('p4a_widget_date', todayStr);
+    safeLocalStorage.setItem('p4a_widget_time_in', timeInVal);
+
+    // Calculate time out (9 hours later = 8h work + 1h lunch)
+    const [hours, mins] = timeInVal.split(':').map(Number);
+    let outHours = hours + 9;
+    let outMins = mins;
+
+    if (outHours >= 24) outHours -= 24;
+
+    const outHoursStr = String(outHours).padStart(2, '0');
+    const outMinsStr = String(outMins).padStart(2, '0');
+    
+    targetEl.textContent = `${outHoursStr}:${outMinsStr}`;
+
+    updateCountdownDisplay();
+}
+
+function updateCountdownDisplay() {
+    const timeInInput = document.getElementById('widgetTimeIn');
+    const displayEl = document.getElementById('widgetCountdown');
+    const progressEl = document.getElementById('widgetProgressCircle');
+    const headerTitle = document.getElementById('widgetHeaderTitle');
+    
+    if (!timeInInput || !displayEl || !progressEl) return;
+
+    const timeInVal = timeInInput.value;
+    if (!timeInVal) return;
+
+    const [inHours, inMins] = timeInVal.split(':').map(Number);
+    
+    const now = new Date();
+    
+    const timeInDate = new Date(now);
+    timeInDate.setHours(inHours, inMins, 0, 0);
+    
+    const timeOutDate = new Date(timeInDate);
+    timeOutDate.setHours(timeInDate.getHours() + 9);
+
+    const totalDurationMs = 9 * 60 * 60 * 1000;
+    const elapsedMs = now - timeInDate;
+    
+    // Total circumference for circle r=46 is ~289
+    const circumference = 289.03;
+
+    if (now >= timeOutDate) {
+        displayEl.textContent = "00:00:00";
+        progressEl.style.strokeDashoffset = "0"; // 100% full
+        headerTitle.textContent = "DONE";
+        displayEl.style.color = "var(--p4a-green)";
+        return;
+    }
+
+    if (now < timeInDate) {
+        displayEl.textContent = "WAIT";
+        progressEl.style.strokeDashoffset = circumference; // 0% full
+        headerTitle.textContent = "EARLY";
+        displayEl.style.color = "var(--gray-500)";
+        return;
+    }
+
+    // Normal countdown
+    displayEl.style.color = "var(--p4a-yellow)";
+    headerTitle.textContent = "LEFT";
+    
+    const remainingMs = timeOutDate - now;
+    
+    const h = Math.floor(remainingMs / (1000 * 60 * 60));
+    const m = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+    const s = Math.floor((remainingMs % (1000 * 60)) / 1000);
+
+    const hh = String(h).padStart(2, '0');
+    const mm = String(m).padStart(2, '0');
+    const ss = String(s).padStart(2, '0');
+
+    // Make format tighter for circle: H:MM:SS or HH:MM
+    if (h > 0) {
+        displayEl.textContent = `${h}:${mm}:${ss}`;
+    } else {
+        displayEl.textContent = `${mm}:${ss}`;
+    }
+
+    const progressPct = Math.min(1, Math.max(0, elapsedMs / totalDurationMs));
+    const offset = circumference - (progressPct * circumference);
+    progressEl.style.strokeDashoffset = offset;
+}
+
+function toggleWidgetPanel() {
+    const panel = document.getElementById('widgetPanel');
+    if (panel) {
+        panel.classList.toggle('active');
+    }
+}
+
+// Initialize widget on load
+document.addEventListener('DOMContentLoaded', () => {
+    initCountdownWidget();
+});

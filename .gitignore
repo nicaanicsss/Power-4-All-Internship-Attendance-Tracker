@@ -1,0 +1,6 @@
+database.sqlite
+check.py
+seed_users.py
+extracted_agendas.json
+__pycache__/
+*.pyc

@@ -64,11 +64,26 @@ let selectedDateStr = null;
 let pendingDateStr = null; // used when "Add for this day" is clicked
 let lastAddedIds = []; // keeps track of last inserted IDs for instant Undone/revert
 
-// ==================== INIT ====================
-document.addEventListener('DOMContentLoaded', () => {
-    // Check authentication. Since index.html manages the login UI overlay, redirect there if unauthorized
-    const sessionUser = safeSessionStorage.getItem('p4a_logged_in_user');
-    if (!sessionUser) {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Check authentication via backend API
+    try {
+        const res = await fetch('/api/me');
+        if (!res.ok) {
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        // Load agendas from backend
+        const agendaRes = await fetch('/api/agendas');
+        if (agendaRes.ok) {
+            agendas = await agendaRes.json();
+            // Convert done/notif back to boolean for JS logic
+            agendas.forEach(a => {
+                a.done = !!a.done;
+                a.notif = !!a.notif;
+            });
+        }
+    } catch (e) {
         window.location.href = 'index.html';
         return;
     }
@@ -94,9 +109,14 @@ function setDefaultDate() {
     document.getElementById('agDate').value = formatDateInput(today);
 }
 
-// ==================== LOCAL STORAGE ====================
+// ==================== DATA STORAGE ====================
 function saveData() {
-    safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(agendas));
+    safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(agendas)); // keep local copy for backup compatibility
+    fetch('/api/agendas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(agendas)
+    }).catch(e => console.error('Failed to save agendas to backend:', e));
 }
 
 // ==================== HELPERS ====================
@@ -250,10 +270,14 @@ function buildNotifications() {
     const notifList = document.getElementById('notifList');
     const notifCount = document.getElementById('notifCount');
 
-    const overdueItems = agendas.filter(a => !a.completed && a.date < today);
-    const todayItems = agendas.filter(a => !a.completed && a.date === today);
-    const tomorrowItems = agendas.filter(a => !a.completed && a.date === tomorrow);
-    const total = overdueItems.length + todayItems.length + tomorrowItems.length;
+    const overdueItems = agendas.filter(a => !a.completed && !a.done && a.date < today);
+    const todayItems = agendas.filter(a => !a.completed && !a.done && a.date === today);
+    const tomorrowItems = agendas.filter(a => !a.completed && !a.done && a.date === tomorrow);
+    
+    const dismissedIds = JSON.parse(safeLocalStorage.getItem('p4a_dismissed_agendas') || '[]');
+    
+    const allNotifs = [...overdueItems, ...todayItems, ...tomorrowItems].filter(a => !dismissedIds.includes(a.id));
+    const total = allNotifs.length;
 
     if (total === 0) {
         notifList.innerHTML = '<div class="notif-empty"><i class="fa-regular fa-bell-slash"></i> You\'re all caught up! 🎉</div>';
@@ -265,7 +289,11 @@ function buildNotifications() {
     notifCount.textContent = total > 9 ? '9+' : total;
 
     let html = '';
-    overdueItems.forEach(a => {
+    const filteredOverdue = overdueItems.filter(a => !dismissedIds.includes(a.id));
+    const filteredToday = todayItems.filter(a => !dismissedIds.includes(a.id));
+    const filteredTomorrow = tomorrowItems.filter(a => !dismissedIds.includes(a.id));
+
+    filteredOverdue.forEach(a => {
         html += `<div class="notif-item notif-overdue" onclick="openViewModal('${a.id}')">
             <div class="notif-item-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
             <div class="notif-item-body">
@@ -274,7 +302,7 @@ function buildNotifications() {
             </div>
         </div>`;
     });
-    todayItems.forEach(a => {
+    filteredToday.forEach(a => {
         html += `<div class="notif-item notif-today" onclick="openViewModal('${a.id}')">
             <div class="notif-item-icon"><i class="fa-solid fa-bell"></i></div>
             <div class="notif-item-body">
@@ -283,7 +311,7 @@ function buildNotifications() {
             </div>
         </div>`;
     });
-    tomorrowItems.forEach(a => {
+    filteredTomorrow.forEach(a => {
         html += `<div class="notif-item notif-tomorrow" onclick="openViewModal('${a.id}')">
             <div class="notif-item-icon"><i class="fa-solid fa-clock"></i></div>
             <div class="notif-item-body">
@@ -306,6 +334,25 @@ function toggleNotifPanel() {
 }
 
 function clearNotifications() {
+    const today = todayStr();
+    const tomorrow = tomorrowStr();
+    
+    // Find all currently active notifications that aren't yet dismissed
+    const overdueItems = agendas.filter(a => !a.completed && !a.done && a.date < today);
+    const todayItems = agendas.filter(a => !a.completed && !a.done && a.date === today);
+    const tomorrowItems = agendas.filter(a => !a.completed && !a.done && a.date === tomorrow);
+    
+    let dismissedIds = JSON.parse(safeLocalStorage.getItem('p4a_dismissed_agendas') || '[]');
+    
+    const allNotifs = [...overdueItems, ...todayItems, ...tomorrowItems];
+    allNotifs.forEach(a => {
+        if (!dismissedIds.includes(a.id)) {
+            dismissedIds.push(a.id);
+        }
+    });
+    
+    safeLocalStorage.setItem('p4a_dismissed_agendas', JSON.stringify(dismissedIds));
+
     document.getElementById('notifList').innerHTML = '<div class="notif-empty"><i class="fa-regular fa-bell-slash"></i> No notifications</div>';
     document.getElementById('notifCount').style.display = 'none';
     toggleNotifPanel();

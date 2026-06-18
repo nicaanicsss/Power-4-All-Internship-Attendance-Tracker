@@ -19,7 +19,7 @@
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="css/styles.css" />
 </head>
 
 <body>
@@ -82,6 +82,12 @@
                 </a>
             </nav>
             <div style="display:flex; align-items:center; gap:12px;">
+                <button class="logout-btn-header" onclick="exportData()" title="Export Backup" id="exportBtn" style="background: rgba(30, 215, 96, 0.1); color: var(--p4a-green); border-color: rgba(30, 215, 96, 0.3);">
+                    <i class="fa-solid fa-download"></i>
+                </button>
+                <button class="logout-btn-header" onclick="unhideWidget()" title="Show Timer" id="showWidgetBtn" style="display:none; background: rgba(245, 197, 24, 0.1); color: var(--p4a-yellow); border-color: rgba(245, 197, 24, 0.3);">
+                    <i class="fa-solid fa-clock"></i>
+                </button>
                 <button class="logout-btn-header" onclick="logout()" title="Logout" id="logoutBtn" style="display:none;">
                     <i class="fa-solid fa-right-from-bracket"></i>
                 </button>
@@ -188,10 +194,16 @@
                 <div class="card profile-card">
                     <div class="profile-header">
                         <h3><i class="fa-solid fa-user-tie"></i> My Profile</h3>
-                        <button class="icon-btn icon-btn-edit" id="editProfileBtn" onclick="toggleProfileEdit()"
-                            title="Edit Profile">
-                            <i class="fa-solid fa-pen"></i>
-                        </button>
+                        <div style="display:flex; gap:0.5rem;">
+                            <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="importData(event)">
+                            <button class="icon-btn icon-btn-edit" style="color:var(--p4a-green);" onclick="document.getElementById('importFileInput').click()" title="Import Backup">
+                                <i class="fa-solid fa-upload"></i>
+                            </button>
+                            <button class="icon-btn icon-btn-edit" id="editProfileBtn" onclick="toggleProfileEdit()"
+                                title="Edit Profile">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- View Mode -->
@@ -218,8 +230,8 @@
                             <input type="text" id="profName" class="form-input" placeholder="Enter your name..." />
                         </div>
                         <div class="form-group">
-                            <label for="profDeptInput">Department</label>
-                            <select id="profDeptInput" class="form-input">
+                            <label for="profDept">Department</label>
+                            <select id="profDept" class="form-input">
                                 <option value="Engineering">Engineering</option>
                                 <option value="Intelligent Systems">Intelligent Systems</option>
                                 <option value="Operations">Operations</option>
@@ -1024,7 +1036,7 @@
                 <p id="authSubtitle">Please enter your credentials to access the hours tracker.</p>
             </div>
 
-            <form class="auth-form" id="authForm" onsubmit="handleAuthSubmit(event)">
+            <form class="auth-form active" id="authForm" onsubmit="handleAuthSubmit(event)">
                 <div class="auth-group">
                     <label for="authEmail">Email Address</label>
                     <div class="auth-input-wrapper">
@@ -1069,7 +1081,33 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- ===================== CIRCULAR FLOATING WIDGET ===================== -->
+    <div class="circular-widget-container" id="countdownWidget">
+        <!-- The form that slides out on hover/click -->
+        <div class="circular-widget-panel" id="widgetPanel">
+            <label for="widgetTimeIn">Time In:</label>
+            <input type="time" id="widgetTimeIn" class="form-input" value="08:00" onchange="updateWidgetTarget()" />
+            <div class="widget-calc">Out: <strong id="widgetTimeOutTarget">17:00</strong></div>
+            <button class="btn btn-outline" style="margin-top: 0.5rem; font-size: 0.7rem; padding: 0.3rem; color: #ff6b6b; border-color: rgba(255,107,107,0.3); width: 100%;" onclick="hideWidget()">
+                <i class="fa-solid fa-eye-slash"></i> Hide
+            </button>
+        </div>
+
+        <!-- The main circular timer -->
+        <div class="circular-widget-core" onclick="toggleWidgetPanel()">
+            <svg viewBox="0 0 100 100" class="widget-svg">
+                <circle cx="50" cy="50" r="46" class="widget-svg-bg"></circle>
+                <circle cx="50" cy="50" r="46" class="widget-svg-fill" id="widgetProgressCircle"></circle>
+            </svg>
+            <div class="circular-widget-content">
+                <div class="circular-widget-title" id="widgetHeaderTitle">LEFT</div>
+                <div class="circular-widget-time" id="widgetCountdown">00:00:00</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/script.js"></script>
 </body>
 
 </html>

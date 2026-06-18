@@ -778,6 +778,10 @@
                     <i class="fa-solid fa-users"></i>
                     <span>Interns Roster</span>
                 </a>
+                <a class="sidebar-nav-item" id="navItemAccounts" onclick="showAccountManagement()">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span>Account Management</span>
+                </a>
                 <div class="sidebar-section-label">Departments</div>
                 <a class="sidebar-nav-item" id="navItemEngineering" onclick="selectSidebarDept('Engineering')">
                     <i class="fa-solid fa-terminal"></i>
@@ -814,8 +818,8 @@
             <!-- TOP BAR -->
             <header class="admin-topbar">
                 <div class="topbar-title">
-                    <h1>Interns Overview</h1>
-                    <p>Monitor progress and track hours for all active interns.</p>
+                    <h1 id="topbarTitleH1">Interns Overview</h1>
+                    <p id="topbarTitleP">Monitor progress and track hours for all active interns.</p>
                 </div>
                 <div class="topbar-right">
                     <div class="admin-chip">
@@ -827,8 +831,7 @@
 
             <!-- CONTENT -->
             <div class="admin-content">
-
-                <!-- STATS ROW -->
+                <div id="internsOverviewPane" class="admin-pane" style="display:block;">
                 <div class="stats-row">
                     <div class="stat-card yellow">
                         <div class="stat-icon-wrap yellow">
@@ -901,6 +904,38 @@
                     <div class="table-footer" id="tableFooter">Loading intern data…</div>
                 </div>
 
+                <!-- ACCOUNT MANAGEMENT PANE -->
+                <div id="accountManagementPane" class="admin-pane" style="display:none;">
+                    <div class="table-section" style="margin-top: 0;">
+                        <div class="table-header" style="flex-wrap: wrap; gap: 1rem;">
+                            <h2><i class="fa-solid fa-user-shield" style="color: var(--yellow); margin-right: 0.5rem;"></i> Administrators & Members</h2>
+                            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-left: auto;">
+                                <div class="search-wrap">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    <input type="text" id="adminUsersSearchInput" placeholder="Search accounts..." onkeyup="filterAdminUsers()">
+                                </div>
+                                <button class="view-btn" onclick="openAddAccountModal()" title="Add New Account" style="padding: 0.45rem 0.85rem; height: 36px; gap: 0.4rem; background: rgba(245, 197, 24, 0.15); border-color: var(--yellow); color: var(--yellow);">
+                                    <i class="fa-solid fa-user-plus"></i> Add Account
+                                </button>
+                            </div>
+                        </div>
+
+                        <table class="intern-table" id="adminUsersTable">
+                            <thead>
+                                <tr>
+                                    <th>Full Name</th>
+                                    <th>Designation / Position</th>
+                                    <th>Email</th>
+                                    <th>Type of Permission</th>
+                                    <th style="text-align: right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminUsersTbody">
+                                <!-- Populated by admin.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -935,6 +970,51 @@
         </div>
     </div>
 
-    <script src="admin.js"></script>
+    <!-- ADD ACCOUNT MODAL -->
+    <div class="modal-overlay" id="addAccountModal">
+        <div class="modal-box" style="max-width: 450px;">
+            <div class="modal-head">
+                <h3><i class="fa-solid fa-user-plus" style="color: var(--yellow); margin-right: 0.4rem;"></i> Add New Account</h3>
+                <button class="modal-close" onclick="closeAddAccountModal()"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="addAccountForm" onsubmit="handleAddAccountSubmit(event)">
+                    <div class="adj-form-group" style="margin-bottom: 1rem;">
+                        <label for="accName">Full Name <span style="color: var(--danger)">*</span></label>
+                        <input type="text" id="accName" class="adj-input" required placeholder="e.g. Dana Faye Rivera" />
+                    </div>
+                    <div class="adj-form-group" style="margin-bottom: 1rem;">
+                        <label for="accEmail">Email Address <span style="color: var(--danger)">*</span></label>
+                        <input type="email" id="accEmail" class="adj-input" required placeholder="name@power4all.org" />
+                    </div>
+                    <div class="adj-form-group" style="margin-bottom: 1rem;">
+                        <label for="accDept">Designation / Position <span style="color: var(--danger)">*</span></label>
+                        <input type="text" id="accDept" class="adj-input" required placeholder="e.g. Asst. Sales Manager for BD" />
+                    </div>
+                    <div class="adj-form-group" style="margin-bottom: 1rem;">
+                        <label for="accRole">Type of Permission <span style="color: var(--danger)">*</span></label>
+                        <select id="accRole" class="adj-input" required>
+                            <option value="admin">Administrator</option>
+                            <option value="member">Member</option>
+                        </select>
+                    </div>
+                    <div class="adj-form-group" style="margin-bottom: 1.5rem;">
+                        <label for="accPass">Initial Password <span style="color: var(--danger)">*</span></label>
+                        <input type="text" id="accPass" class="adj-input" required value="Power4All123!" />
+                        <span style="font-size: 11px; color: var(--muted); margin-top: 4px; display: block;">Users should change their password after logging in.</span>
+                    </div>
+                    
+                    <div class="modal-footer" style="padding: 0; border-top: none; justify-content: flex-end; gap: 10px;">
+                        <button type="button" class="close-action-btn" onclick="closeAddAccountModal()">Cancel</button>
+                        <button type="submit" class="adj-submit-btn">
+                            <i class="fa-solid fa-check"></i> Create Account
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
 </body>
 </html>

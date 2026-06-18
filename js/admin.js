@@ -58,10 +58,20 @@ let currentActiveTab = 'profile'; // 'profile' or 'logs'
 let currentSidebarDept = 'all';
 let currentStatusFilter = 'all';
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Auth Check
-    const isAdmin = safeSessionStorage.getItem('p4a_logged_in_admin');
-    if (!isAdmin) {
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Auth Check via backend
+    try {
+        const res = await fetch('/api/me');
+        if (!res.ok) {
+            window.location.href = 'index.html';
+            return;
+        }
+        const data = await res.json();
+        if (data.user.role !== 'admin') {
+            window.location.href = 'index.html';
+            return;
+        }
+    } catch (e) {
         window.location.href = 'index.html';
         return;
     }
@@ -159,48 +169,18 @@ function generateMockRecords(totalMins, lastActiveDateStr, dept) {
     return records.sort((a, b) => new Date(b.date) - new Date(a.date));
 }
 
-function loadInternsData() {
-    // A. Fetch Local Intern (Nica or current user)
-    const localName = safeLocalStorage.getItem('p4a_intern_name') || 'Nica Desacola';
-    const localDept = safeLocalStorage.getItem('p4a_intern_dept') || 'Engineering';
-    const localSchool = safeLocalStorage.getItem('p4a_intern_school') || 'University of Manila';
-    const localRecords = JSON.parse(safeLocalStorage.getItem('p4a_intern_records') || '[]');
-    
-    let localTotalMins = 0;
-    let localLastActive = 'Never';
-    if (localRecords.length > 0) {
-        localTotalMins = localRecords.reduce((sum, r) => sum + (parseInt(r.durationMins) || 0), 0);
-        const sorted = [...localRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
-        localLastActive = sorted[0].date;
+async function loadInternsData() {
+    try {
+        const res = await fetch('/api/admin/interns');
+        if (res.ok) {
+            allInterns = await res.json();
+            updateDashboard();
+        } else {
+            console.error('Failed to load interns data');
+        }
+    } catch (e) {
+        console.error('Error fetching interns:', e);
     }
-
-    const localIntern = {
-        id: 'local',
-        name: localName,
-        dept: localDept,
-        school: localSchool,
-        totalMins: localTotalMins,
-        lastActive: localLastActive,
-        isReal: true,
-        records: localRecords
-    };
-
-    // B. Generate Mock Interns
-    const mockInterns = [
-        { id: 'm1', name: 'James Carter', dept: 'Intelligent Systems', school: 'Tech Institute', totalMins: 110 * 60, lastActive: '2026-06-15', isReal: false },
-        { id: 'm2', name: 'Sophia Lin', dept: 'Marketing & Comms', school: 'State University', totalMins: 205 * 60, lastActive: '2026-06-16', isReal: false },
-        { id: 'm3', name: 'Miguel Santos', dept: 'Business Dev', school: 'Metro College', totalMins: 45 * 60, lastActive: '2026-06-10', isReal: false },
-        { id: 'm4', name: 'Emily Chen', dept: 'Operations', school: 'National U', totalMins: 240 * 60, lastActive: '2026-06-01', isReal: false }
-    ];
-
-    // Generate records for each mock intern
-    mockInterns.forEach(i => {
-        i.records = generateMockRecords(i.totalMins, i.lastActive, i.dept);
-    });
-
-    allInterns = [localIntern, ...mockInterns];
-
-    updateDashboard();
 }
 
 function updateDashboard() {
@@ -516,35 +496,35 @@ function renderModalContent() {
     }
 }
 
-function deleteInternRecord(internId, recordId) {
+async function deleteInternRecord(internId, recordId) {
     const intern = allInterns.find(i => i.id === internId);
     if (!intern) return;
 
     if (!confirm('Are you sure you want to delete this attendance record?')) return;
 
-    // Remove the record
-    intern.records = intern.records.filter(r => r.id !== recordId);
-    
-    // Recalculate totals
-    intern.totalMins = intern.records.reduce((sum, r) => sum + (parseInt(r.durationMins) || 0), 0);
-    if (intern.records.length > 0) {
-        const sorted = [...intern.records].sort((a, b) => new Date(b.date) - new Date(a.date));
-        intern.lastActive = sorted[0].date;
-    } else {
-        intern.lastActive = 'Never';
+    try {
+        const res = await fetch(`/api/admin/records/${recordId}`, { method: 'DELETE' });
+        if (res.ok) {
+            intern.records = intern.records.filter(r => r.id !== recordId);
+            intern.totalMins = intern.records.reduce((sum, r) => sum + (parseInt(r.durationMins) || 0), 0);
+            if (intern.records.length > 0) {
+                const sorted = [...intern.records].sort((a, b) => new Date(b.date) - new Date(a.date));
+                intern.lastActive = sorted[0].date;
+            } else {
+                intern.lastActive = 'Never';
+            }
+            updateDashboard();
+            renderModalContent();
+        } else {
+            alert('Failed to delete record from backend.');
+        }
+    } catch (e) {
+        console.error(e);
+        alert('Error deleting record.');
     }
-
-    // Persist if it is Nica (real user)
-    if (intern.isReal) {
-        safeLocalStorage.setItem('p4a_intern_records', JSON.stringify(intern.records));
-    }
-
-    // Update roster statistics
-    updateDashboard();
-    renderModalContent();
 }
 
-function handleManualLogSubmit(e) {
+async function handleManualLogSubmit(e) {
     e.preventDefault();
     const intern = allInterns.find(i => i.id === selectedInternId);
     if (!intern) return;
@@ -560,7 +540,6 @@ function handleManualLogSubmit(e) {
         return;
     }
 
-    // Calculations
     const inM = toMinutes(timeIn);
     const outM = toMinutes(timeOut);
     if (outM <= inM) {
@@ -569,11 +548,11 @@ function handleManualLogSubmit(e) {
     }
 
     const grossMins = outM - inM;
-    // Deduct 1 hr break if work is > 1 hr
     const durationMins = grossMins > 60 ? grossMins - 60 : grossMins;
 
     const newRecord = {
         id: 'rec-' + Date.now(),
+        user_id: intern.id,
         date: date,
         timeIn: timeIn,
         timeOut: timeOut,
@@ -586,24 +565,29 @@ function handleManualLogSubmit(e) {
         type: 'regular'
     };
 
-    // Add record
-    intern.records.push(newRecord);
-    intern.records.sort((a, b) => new Date(b.date) - new Date(a.date));
+    try {
+        const res = await fetch('/api/admin/records', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newRecord)
+        });
+        
+        if (res.ok) {
+            intern.records.push(newRecord);
+            intern.records.sort((a, b) => new Date(b.date) - new Date(a.date));
+            intern.totalMins = intern.records.reduce((sum, r) => sum + (parseInt(r.durationMins) || 0), 0);
+            intern.lastActive = intern.records[0].date;
 
-    // Update aggregates
-    intern.totalMins = intern.records.reduce((sum, r) => sum + (parseInt(r.durationMins) || 0), 0);
-    intern.lastActive = intern.records[0].date;
-
-    // Persist Nica's details to local storage
-    if (intern.isReal) {
-        safeLocalStorage.setItem('p4a_intern_records', JSON.stringify(intern.records));
+            alert(`Success: Record for ${formatDate(date)} (${minutesToHM(durationMins)}) added.`);
+            updateDashboard();
+            renderModalContent();
+        } else {
+            alert('Failed to save record to backend.');
+        }
+    } catch (e) {
+        console.error(e);
+        alert('Error saving record.');
     }
-
-    alert(`Success: Record for ${formatDate(date)} (${minutesToHM(durationMins)}) added.`);
-
-    // Refresh UI
-    updateDashboard();
-    renderModalContent();
 }
 
 function closeInternDetails() {
@@ -976,8 +960,12 @@ function downloadRosterSummary() {
     document.body.removeChild(link);
 }
 
-function adminLogout() {
-    safeSessionStorage.removeItem('p4a_logged_in_admin');
+async function adminLogout() {
+    try {
+        await fetch('/api/logout', { method: 'POST' });
+    } catch(e) {
+        console.error(e);
+    }
     window.location.href = 'index.html';
 }
 
@@ -1014,4 +1002,143 @@ function toMinutes(timeStr) {
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ==================== ACCOUNT MANAGEMENT ====================
+let allAdminUsers = [];
+
+function showAccountManagement() {
+    // UI Tab selection
+    document.querySelectorAll('#adminSidebarNav .sidebar-nav-item').forEach(i => i.classList.remove('active'));
+    document.getElementById('navItemAccounts').classList.add('active');
+
+    // Show correct pane
+    document.getElementById('internsOverviewPane').style.display = 'none';
+    document.getElementById('accountManagementPane').style.display = 'block';
+
+    // Update Topbar
+    document.getElementById('topbarTitleH1').textContent = 'Account Management';
+    document.getElementById('topbarTitleP').textContent = 'Manage Administrator and Member accounts.';
+
+    loadAdminUsers();
+}
+
+// Override selectSidebarDept to show interns pane again
+const originalSelectSidebarDept = selectSidebarDept;
+window.selectSidebarDept = function(dept) {
+    document.getElementById('accountManagementPane').style.display = 'none';
+    document.getElementById('internsOverviewPane').style.display = 'block';
+    
+    document.getElementById('topbarTitleH1').textContent = 'Interns Overview';
+    document.getElementById('topbarTitleP').textContent = 'Monitor progress and track hours for all active interns.';
+    
+    document.getElementById('navItemAccounts').classList.remove('active');
+    originalSelectSidebarDept(dept);
+};
+
+async function loadAdminUsers() {
+    try {
+        const res = await fetch('/api/admin/users');
+        if (res.ok) {
+            allAdminUsers = await res.json();
+            renderAdminUsersTable(allAdminUsers);
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function renderAdminUsersTable(users) {
+    const tbody = document.getElementById('adminUsersTbody');
+    if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-row">No accounts found.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = users.map(u => {
+        const roleDisplay = u.role === 'admin' ? 'Administrator' : 'Member';
+        const pillBg = u.role === 'admin' ? 'rgba(245, 197, 24, 0.15)' : 'rgba(74, 222, 128, 0.15)';
+        const pillColor = u.role === 'admin' ? 'var(--yellow)' : 'var(--success)';
+        
+        return `
+            <tr>
+                <td style="font-weight: 500; color: var(--text);">${escapeHtml(u.name)}</td>
+                <td>${escapeHtml(u.dept)}</td>
+                <td style="color: var(--muted);">${escapeHtml(u.email)}</td>
+                <td><span class="dept-pill" style="background: ${pillBg}; color: ${pillColor}; border: 1px solid ${pillColor};">${roleDisplay}</span></td>
+                <td style="text-align: right;">
+                    <button class="modal-close" style="width: 26px; height: 26px; border-radius: 6px; display: inline-flex;" onclick="deleteAdminUser('${u.id}')" title="Delete account">
+                        <i class="fa-solid fa-trash" style="color: var(--danger); font-size: 0.75rem;"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function filterAdminUsers() {
+    const q = document.getElementById('adminUsersSearchInput').value.toLowerCase();
+    const filtered = allAdminUsers.filter(u => 
+        u.name.toLowerCase().includes(q) || 
+        u.email.toLowerCase().includes(q) || 
+        u.dept.toLowerCase().includes(q)
+    );
+    renderAdminUsersTable(filtered);
+}
+
+function openAddAccountModal() {
+    document.getElementById('addAccountForm').reset();
+    document.getElementById('addAccountModal').classList.add('open');
+}
+
+function closeAddAccountModal() {
+    document.getElementById('addAccountModal').classList.remove('open');
+}
+
+async function handleAddAccountSubmit(e) {
+    e.preventDefault();
+    const payload = {
+        name: document.getElementById('accName').value,
+        email: document.getElementById('accEmail').value,
+        dept: document.getElementById('accDept').value,
+        role: document.getElementById('accRole').value,
+        password: document.getElementById('accPass').value
+    };
+
+    try {
+        const res = await fetch('/api/admin/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+            alert('Account created successfully.');
+            closeAddAccountModal();
+            loadAdminUsers();
+        } else {
+            alert(data.error || 'Failed to create account.');
+        }
+    } catch (e) {
+        console.error(e);
+        alert('An error occurred.');
+    }
+}
+
+async function deleteAdminUser(id) {
+    if (!confirm('Are you sure you want to delete this account?')) return;
+    
+    try {
+        const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok) {
+            loadAdminUsers();
+        } else {
+            alert(data.error || 'Failed to delete account.');
+        }
+    } catch (e) {
+        console.error(e);
+        alert('An error occurred.');
+    }
 }
