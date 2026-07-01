@@ -110,8 +110,6 @@ def setup_db():
     conn.commit()
     conn.close()
 
-setup_db()
-
 # ==================== STATIC FILES ====================
 @app.route('/')
 def serve_index():
