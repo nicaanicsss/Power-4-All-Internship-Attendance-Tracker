@@ -80,6 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Convert done/notif back to boolean for JS logic
             agendas.forEach(a => {
                 a.done = !!a.done;
+                a.completed = a.done;
                 a.notif = !!a.notif;
             });
         }
@@ -868,11 +869,12 @@ function toggleComplete(id) {
     const ag = agendas.find(a => a.id === id);
     if (!ag) return;
     ag.completed = !ag.completed;
+    ag.done = ag.completed;
     saveData();
     renderCurrentView();
     buildNotifications();
     renderHeroStats();
-    updateTodayGlance();
+    if (typeof updateTodayGlance === 'function') updateTodayGlance();
     showToast(ag.completed ? 'Marked as done! ✅' : 'Marked as incomplete', ag.completed ? 'success' : 'info', ag.completed ? 'fa-check-circle' : 'fa-rotate-left');
 }
 

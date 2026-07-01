@@ -68,11 +68,24 @@ const ACHIEVEMENTS_KEY = 'p4a_intern_achievements';
 
 const ACHIEVEMENTS_LIST = [
     { id: 'first_log', title: 'First Steps', desc: 'Log your very first hours.', icon: 'fa-solid fa-shoe-prints' },
-    { id: 'tasks_10', title: 'Task Master', desc: 'Complete 10 To-Do tasks.', icon: 'fa-solid fa-list-check' },
+    { id: 'days_3', title: 'Warming Up', desc: 'Log attendance for 3 unique days.', icon: 'fa-solid fa-fire-burner' },
     { id: 'days_7', title: 'Dedicated', desc: 'Log attendance for 7 unique days.', icon: 'fa-solid fa-calendar-week' },
+    { id: 'days_14', title: 'Two Weeks In', desc: 'Log attendance for 14 unique days.', icon: 'fa-solid fa-calendar-days' },
+    { id: 'days_30', title: 'A Month of Growth', desc: 'Log attendance for 30 unique days.', icon: 'fa-solid fa-calendar-check' },
+    { id: 'hours_10', title: 'Double Digits', desc: 'Reach 10 logged hours.', icon: 'fa-solid fa-clock' },
+    { id: 'hours_25', title: 'Quarter Century', desc: 'Reach 25 logged hours.', icon: 'fa-solid fa-hourglass-start' },
     { id: 'hours_50', title: 'Half Century', desc: 'Reach 50 logged hours.', icon: 'fa-solid fa-hourglass-half' },
     { id: 'hours_100', title: 'Century Club', desc: 'Reach 100 logged hours.', icon: 'fa-solid fa-100' },
-    { id: 'hours_240', title: 'Finish Line', desc: 'Complete the 240 hours requirement!', icon: 'fa-solid fa-graduation-cap' }
+    { id: 'hours_150', title: 'Over the Hill', desc: 'Reach 150 logged hours.', icon: 'fa-solid fa-mountain' },
+    { id: 'hours_200', title: 'The Final Stretch', desc: 'Reach 200 logged hours.', icon: 'fa-solid fa-flag-checkered' },
+    { id: 'hours_240', title: 'Finish Line', desc: 'Complete the 240 hours requirement!', icon: 'fa-solid fa-graduation-cap' },
+    { id: 'tasks_1', title: 'First Task', desc: 'Complete your first To-Do task.', icon: 'fa-solid fa-check' },
+    { id: 'tasks_5', title: 'Getting Things Done', desc: 'Complete 5 To-Do tasks.', icon: 'fa-solid fa-list-ul' },
+    { id: 'tasks_10', title: 'Task Master', desc: 'Complete 10 To-Do tasks.', icon: 'fa-solid fa-list-check' },
+    { id: 'tasks_25', title: 'Productivity Guru', desc: 'Complete 25 To-Do tasks.', icon: 'fa-solid fa-bolt' },
+    { id: 'tasks_50', title: 'Task Annihilator', desc: 'Complete 50 To-Do tasks.', icon: 'fa-solid fa-fire-flame-curved' },
+    { id: 'mood_perfect', title: 'Perfect Day', desc: 'Log a day with a 5-star rating.', icon: 'fa-solid fa-star' },
+    { id: 'overtime', title: 'Going the Extra Mile', desc: 'Log a day with over 9 hours of duration.', icon: 'fa-solid fa-battery-full' }
 ];
 
 function exportData() {
@@ -353,9 +366,24 @@ function minutesToDecimalHours(mins) {
     return Math.round(mins / 60 * 100) / 100;
 }
 
+function getEffectiveTimeIn(timeIn) {
+    let inM = toMinutes(timeIn);
+    if (!inM) return 0;
+    
+    // Earliest shift is 7:00 AM (420 mins)
+    if (inM < 420) inM = 420;
+    
+    // Round up to nearest 30 mins
+    const remainder = inM % 30;
+    if (remainder > 0) {
+        inM += (30 - remainder);
+    }
+    return inM;
+}
+
 function calcDuration(timeIn, timeOut) {
     // Returns NET minutes (gross time minus 1-hour lunch break)
-    const inM = toMinutes(timeIn);
+    const inM = getEffectiveTimeIn(timeIn);
     const outM = toMinutes(timeOut);
     if (!inM && !outM) return 0;
     const gross = Math.max(0, outM - inM);
@@ -364,7 +392,7 @@ function calcDuration(timeIn, timeOut) {
 
 function calcGrossDuration(timeIn, timeOut) {
     // Returns GROSS minutes (raw time difference, no deduction)
-    const inM = toMinutes(timeIn);
+    const inM = getEffectiveTimeIn(timeIn);
     const outM = toMinutes(timeOut);
     if (!inM && !outM) return 0;
     return Math.max(0, outM - inM);
@@ -2032,7 +2060,7 @@ function addTodoItem() {
 }
 
 function toggleTodo(id) {
-    const todo = todos.find(t => t.id === id);
+    const todo = todos.find(t => String(t.id) === String(id));
     if (!todo) return;
     todo.done = !todo.done;
     todo.completedAt = todo.done ? new Date().toISOString() : null;
@@ -2044,7 +2072,7 @@ function toggleTodo(id) {
 }
 
 function deleteTodo(id) {
-    todos = todos.filter(t => t.id !== id);
+    todos = todos.filter(t => String(t.id) !== String(id));
     saveTodos();
     renderTodoList();
     showToast('Task removed.', 'warning');
@@ -2134,7 +2162,7 @@ function renderTodoList() {
             : '';
         return `
         <div class="todo-item ${todo.done ? 'todo-done' : ''} ${pri.cls}" data-id="${todo.id}">
-            <button class="todo-check-btn" onclick="toggleTodo(${todo.id})" title="${todo.done ? 'Mark as pending' : 'Mark as done'}">
+            <button class="todo-check-btn" onclick="toggleTodo('${todo.id}')" title="${todo.done ? 'Mark as pending' : 'Mark as done'}">
                 <i class="fa-${todo.done ? 'solid fa-circle-check' : 'regular fa-circle'}"></i>
             </button>
             <div class="todo-item-body">
@@ -2146,7 +2174,7 @@ function renderTodoList() {
                     ${todo.done && todo.completedAt ? `<span class="todo-done-tag"><i class="fa-solid fa-check"></i> Done</span>` : ''}
                 </div>
             </div>
-            <button class="todo-delete-btn" onclick="deleteTodo(${todo.id})" title="Delete task">
+            <button class="todo-delete-btn" onclick="deleteTodo('${todo.id}')" title="Delete task">
                 <i class="fa-solid fa-trash"></i>
             </button>
         </div>`;
@@ -2197,20 +2225,31 @@ function checkAchievements() {
     // 1. First log
     if (records.length > 0) unlock('first_log');
     
-    // 2. Task Master (10 tasks)
-    if (doneTasks >= 10) unlock('tasks_10');
-    
-    // 3. Dedicated (7 unique days)
+    // 2. Days attended
+    if (uniqueDays >= 3) unlock('days_3');
     if (uniqueDays >= 7) unlock('days_7');
+    if (uniqueDays >= 14) unlock('days_14');
+    if (uniqueDays >= 30) unlock('days_30');
     
-    // 4. Half Century (50 hours)
+    // 3. Hours logged
+    if (totalHours >= 10) unlock('hours_10');
+    if (totalHours >= 25) unlock('hours_25');
     if (totalHours >= 50) unlock('hours_50');
-    
-    // 5. Century Club (100 hours)
     if (totalHours >= 100) unlock('hours_100');
-    
-    // 6. Finish Line (240 hours)
+    if (totalHours >= 150) unlock('hours_150');
+    if (totalHours >= 200) unlock('hours_200');
     if (totalHours >= REQUIRED_HOURS) unlock('hours_240');
+
+    // 4. Tasks completed
+    if (doneTasks >= 1) unlock('tasks_1');
+    if (doneTasks >= 5) unlock('tasks_5');
+    if (doneTasks >= 10) unlock('tasks_10');
+    if (doneTasks >= 25) unlock('tasks_25');
+    if (doneTasks >= 50) unlock('tasks_50');
+
+    // 5. Special events
+    if (records.some(r => r.mood === 5)) unlock('mood_perfect');
+    if (records.some(r => r.durationMins > 9 * 60)) unlock('overtime');
 
     if (newlyUnlocked) {
         saveAchievements();
@@ -2307,10 +2346,10 @@ function updateWidgetTarget() {
     safeLocalStorage.setItem('p4a_widget_date', todayStr);
     safeLocalStorage.setItem('p4a_widget_time_in', timeInVal);
 
-    // Calculate time out (9 hours later = 8h work + 1h lunch)
-    const [hours, mins] = timeInVal.split(':').map(Number);
-    let outHours = hours + 9;
-    let outMins = mins;
+    // Calculate time out (9 hours later = 8h work + 1h lunch) based on effective time
+    const inM = getEffectiveTimeIn(timeInVal);
+    let outHours = Math.floor(inM / 60) + 9;
+    let outMins = inM % 60;
 
     if (outHours >= 24) outHours -= 24;
 
@@ -2333,7 +2372,9 @@ function updateCountdownDisplay() {
     const timeInVal = timeInInput.value;
     if (!timeInVal) return;
 
-    const [inHours, inMins] = timeInVal.split(':').map(Number);
+    const inM = getEffectiveTimeIn(timeInVal);
+    const inHours = Math.floor(inM / 60);
+    const inMins = inM % 60;
     
     const now = new Date();
     

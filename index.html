@@ -8,6 +8,7 @@
         content="Power 4 All Internship Hours Tracker - Track your 240-hour internship progress with POWER 4 ALL, Inc." />
     <meta name="keywords" content="Power 4 All, internship, hours tracker, P4A, attendance" />
     <title>P4A Intern Hours Tracker | POWER 4 ALL, Inc.</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
 
     <!-- Google Fonts: Poppins (matches P4A website) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -1086,8 +1087,8 @@
         <!-- The form that slides out on hover/click -->
         <div class="circular-widget-panel" id="widgetPanel">
             <label for="widgetTimeIn">Time In:</label>
-            <input type="time" id="widgetTimeIn" class="form-input" value="08:00" onchange="updateWidgetTarget()" />
-            <div class="widget-calc">Out: <strong id="widgetTimeOutTarget">17:00</strong></div>
+            <input type="time" id="widgetTimeIn" class="form-input" value="07:00" onchange="updateWidgetTarget()" />
+            <div class="widget-calc">Out: <strong id="widgetTimeOutTarget">16:00</strong></div>
             <button class="btn btn-outline" style="margin-top: 0.5rem; font-size: 0.7rem; padding: 0.3rem; color: #ff6b6b; border-color: rgba(255,107,107,0.3); width: 100%;" onclick="hideWidget()">
                 <i class="fa-solid fa-eye-slash"></i> Hide
             </button>
@@ -1102,6 +1103,7 @@
             <div class="circular-widget-content">
                 <div class="circular-widget-title" id="widgetHeaderTitle">LEFT</div>
                 <div class="circular-widget-time" id="widgetCountdown">00:00:00</div>
+                <div style="font-size: 0.55rem; color: var(--gray-400); margin-top: -2px; font-weight: 500; letter-spacing: 0.5px;">(incl. 1h break)</div>
             </div>
         </div>
     </div>

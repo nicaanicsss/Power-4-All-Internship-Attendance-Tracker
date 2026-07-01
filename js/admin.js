@@ -540,7 +540,7 @@ async function handleManualLogSubmit(e) {
         return;
     }
 
-    const inM = toMinutes(timeIn);
+    const inM = getEffectiveTimeIn(timeIn);
     const outM = toMinutes(timeOut);
     if (outM <= inM) {
         alert('Time Out must be after Time In.');
@@ -997,6 +997,21 @@ function toMinutes(timeStr) {
     if (!timeStr) return 0;
     const [h, m] = timeStr.split(':').map(Number);
     return h * 60 + m;
+}
+
+function getEffectiveTimeIn(timeIn) {
+    let inM = toMinutes(timeIn);
+    if (!inM) return 0;
+    
+    // Earliest shift is 7:00 AM (420 mins)
+    if (inM < 420) inM = 420;
+    
+    // Round up to nearest 30 mins
+    const remainder = inM % 30;
+    if (remainder > 0) {
+        inM += (30 - remainder);
+    }
+    return inM;
 }
 
 function escapeHtml(str) {
