@@ -165,30 +165,36 @@ def register():
 
 @app.route('/api/login', methods=['POST'])
 def login():
-    data = request.json
-    email = data.get('email')
-    password = data.get('password')
+    try:
+        data = request.json
+        email = data.get('email')
+        password = data.get('password')
 
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
-    user = cursor.fetchone()
-    conn.close()
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+        user = cursor.fetchone()
+        conn.close()
 
-    if user and check_password_hash(user['password_hash'], password):
-        session['user_id'] = user['id']
-        session['role'] = user['role']
-        return jsonify({
-            'success': True, 
-            'user': {
-                'id': user['id'], 
-                'email': user['email'], 
-                'name': user['name'],
-                'role': user['role']
-            }
-        })
-    
-    return jsonify({'error': 'Invalid email or password'}), 401
+        if user and check_password_hash(user['password_hash'], password):
+            session['user_id'] = user['id']
+            session['role'] = user['role']
+            return jsonify({
+                'success': True, 
+                'user': {
+                    'id': user['id'], 
+                    'email': user['email'], 
+                    'name': user['name'],
+                    'role': user['role']
+                }
+            })
+        
+        return jsonify({'error': 'Invalid email or password'}), 401
+    except Exception as e:
+        import traceback
+        trace_str = traceback.format_exc()
+        print("Login Error:", trace_str)
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/logout', methods=['POST'])
 def logout():
