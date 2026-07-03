@@ -106,7 +106,7 @@ def setup_db():
             category TEXT,
             priority TEXT,
             repeat TEXT,
-            desc TEXT,
+            "desc" TEXT,
             location TEXT,
             notif INTEGER,
             done INTEGER,
@@ -334,7 +334,7 @@ def handle_agendas():
         conn.execute("DELETE FROM agendas WHERE user_id = %s", (user_id,))
         for r in data:
             conn.execute("""
-                INSERT INTO agendas (id, user_id, title, date, time, category, priority, repeat, desc, location, notif, done)
+                INSERT INTO agendas (id, user_id, title, date, time, category, priority, repeat, "desc", location, notif, done)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 str(r.get('id', uuid.uuid4())), user_id, r.get('title'), r.get('date'), 
@@ -512,7 +512,7 @@ def import_data():
         conn.execute("DELETE FROM agendas WHERE user_id = %s", (user_id,))
         for r in agendas:
             conn.execute("""
-                INSERT INTO agendas (id, user_id, title, date, time, category, priority, repeat, desc, location, notif, done)
+                INSERT INTO agendas (id, user_id, title, date, time, category, priority, repeat, "desc", location, notif, done)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 str(r.get('id', uuid.uuid4())), user_id, r.get('title'), r.get('date'), 
