@@ -13,6 +13,10 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True)
 app.secret_key = 'p4a_super_secret_key_intern_tracker' # In production, use os.urandom(24)
 
+@app.errorhandler(Exception)
+def handle_exception(e):
+    return jsonify({"error": str(e)}), 500
+
 DB_PATH = 'database.sqlite'
 
 class PgConnectionWrapper:
@@ -35,6 +39,8 @@ class PgConnectionWrapper:
 
 def get_db():
     database_url = os.environ.get('POSTGRES_URL_NON_POOLING') or os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL', 'postgresql://localhost/attendance')
+    if database_url and 'localhost' not in database_url and 'sslmode' not in database_url:
+        database_url += '&sslmode=require' if '?' in database_url else '?sslmode=require'
     conn = psycopg2.connect(database_url)
     return PgConnectionWrapper(conn)
 
