@@ -524,10 +524,15 @@ def import_data():
     conn.close()
     return jsonify({'success': True})
 
-try:
-    setup_db()
-except Exception as e:
-    print("DB setup error:", e)
+@app.route('/api/init-db', methods=['GET'])
+def init_db():
+    try:
+        setup_db()
+        return jsonify({"success": True, "message": "Database tables created successfully!"})
+    except Exception as e:
+        import traceback
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # setup_db() is now handled via the /api/init-db endpoint for production
+    app.run(debug=True, host='0.0.0.0', port=5000)
