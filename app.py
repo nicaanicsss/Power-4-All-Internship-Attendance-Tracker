@@ -34,7 +34,7 @@ class PgConnectionWrapper:
         return self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
 def get_db():
-    database_url = os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL', 'postgresql://localhost/attendance')
+    database_url = os.environ.get('POSTGRES_URL_NON_POOLING') or os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL', 'postgresql://localhost/attendance')
     conn = psycopg2.connect(database_url)
     return PgConnectionWrapper(conn)
 

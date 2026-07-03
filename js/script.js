@@ -852,6 +852,7 @@ function getPHHolidays(year) {
         `${year}-04-09`, // Araw ng Kagitingan
         `${year}-05-01`, // Labor Day
         `${year}-06-12`, // Independence Day
+        `${year}-07-02`, // Pasig Day
         `${year}-08-21`, // Ninoy Aquino Day
         `${year}-11-01`, // All Saints Day
         `${year}-11-02`, // All Souls Day
