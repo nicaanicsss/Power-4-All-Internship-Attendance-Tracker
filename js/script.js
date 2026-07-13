@@ -883,12 +883,6 @@ function updateEstimate(totalMins, avgMins) {
     const estText = document.getElementById('estimateText');
     const estBadge = document.getElementById('estimateBadge');
 
-    if (avgMins === 0) {
-        if (estText) estText.textContent = 'Log your hours to see your estimated completion date.';
-        if (estBadge) estBadge.textContent = '—';
-        return;
-    }
-
     const remainingMins = Math.max(0, REQUIRED_HOURS * 60 - totalMins);
     if (remainingMins === 0) {
         if (estText) estText.textContent = '🎉 Congratulations! You have completed your 240-hour internship requirement!';
@@ -896,21 +890,37 @@ function updateEstimate(totalMins, avgMins) {
         return;
     }
 
-    const remainingDays = Math.ceil(remainingMins / avgMins);
-    let workDaysAdded = 0;
     const currentDate = new Date();
-    // Pre-load holidays for this year and next (spans may cross year boundary)
     const thisYear = currentDate.getFullYear();
-    const holidays = new Set([...getPHHolidays(thisYear), ...getPHHolidays(thisYear + 1)]);
+    const targetDate = new Date(thisYear, 6, 31); // July 31
+    targetDate.setHours(23, 59, 59, 999);
 
-    while (workDaysAdded < remainingDays) {
-        currentDate.setDate(currentDate.getDate() + 1);
-        if (isWorkDay(currentDate, holidays)) workDaysAdded++;
+    if (currentDate > targetDate) {
+        if (estText) estText.textContent = 'The July 31 deadline has passed, but you still have hours remaining.';
+        if (estBadge) estBadge.textContent = 'Overdue';
+        return;
     }
 
-    const dateLabel = currentDate.toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' });
-    if (estText) estText.textContent = `At your current pace of ${minutesToHM(avgMins)}/day, you need ${remainingDays} more work days (excl. weekends & PH holidays).`;
-    if (estBadge) estBadge.textContent = dateLabel;
+    const holidays = new Set([...getPHHolidays(thisYear), ...getPHHolidays(thisYear + 1)]);
+    let workDaysLeft = 0;
+    
+    // Count remaining work days starting from tomorrow
+    let checkDate = new Date();
+    checkDate.setDate(checkDate.getDate() + 1);
+    checkDate.setHours(0, 0, 0, 0);
+    
+    while (checkDate <= targetDate) {
+        if (isWorkDay(checkDate, holidays)) {
+            workDaysLeft++;
+        }
+        checkDate.setDate(checkDate.getDate() + 1);
+    }
+
+    if (workDaysLeft === 0) workDaysLeft = 1; // Prevent division by zero if it's the last day
+    const requiredMinsPerDay = Math.ceil(remainingMins / workDaysLeft);
+
+    if (estText) estText.textContent = `To finish by July 31, you need to average ${minutesToHM(requiredMinsPerDay)}/day for the remaining ${workDaysLeft} work days.`;
+    if (estBadge) estBadge.textContent = 'July 31 Deadline';
 }
 
 // ==================== RECENT ACTIVITY ====================
