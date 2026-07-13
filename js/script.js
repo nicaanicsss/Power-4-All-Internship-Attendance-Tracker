@@ -768,9 +768,37 @@ function getRandomQuote(excludeIndex) {
 function updateAllowanceTracker(totalMins, avgMins, remainingMins, pct, daysAttended) {
     const earned = daysAttended * ALLOWANCE_PER_DAY;
 
-    // Project remaining working days based on avg pace, or assume 8h/day
-    const effectiveAvgMins = avgMins > 0 ? avgMins : AVG_HOURS_FALLBACK * 60;
-    const remainingDays = remainingMins > 0 ? Math.ceil(remainingMins / effectiveAvgMins) : 0;
+    // Company requested extension until July 31, 2026.
+    // Calculate remaining working days from now until July 31.
+    const endDate = new Date('2026-07-31T00:00:00');
+    let d = new Date();
+    d.setHours(0, 0, 0, 0);
+
+    // Determine if today was already logged to prevent double counting
+    const todayStr = formatLocalDate(new Date());
+    // (Assuming `records` is globally accessible in script.js, which it is based on context)
+    const hasLoggedToday = typeof records !== 'undefined' && records.some(r => r.date === todayStr);
+
+    let remainingDays = 0;
+
+    // Check today
+    if (!hasLoggedToday) {
+        const day = d.getDay();
+        if (day !== 0 && day !== 6 && d <= endDate) {
+            remainingDays++;
+        }
+    }
+
+    // Check tomorrow onwards
+    d.setDate(d.getDate() + 1);
+    while (d <= endDate) {
+        const day = d.getDay();
+        if (day !== 0 && day !== 6) {
+            remainingDays++;
+        }
+        d.setDate(d.getDate() + 1);
+    }
+
     const remainingAllowance = remainingDays * ALLOWANCE_PER_DAY;
     const totalProjected = earned + remainingAllowance;
 
@@ -789,7 +817,7 @@ function updateAllowanceTracker(totalMins, avgMins, remainingMins, pct, daysAtte
     const progFill = document.getElementById('allowanceProgressFill');
     if (progFill) progFill.style.width = `${dayPct}%`;
     setEl('allowanceProgressText', `${daysAttended} / ${projectedTotalDays} days`);
-    setEl('allowancePercent', `${dayPct}% of internship complete`);
+    setEl('allowancePercent', `Extended until July 31`);
 
     // Set initial random quote once on first load
     const quoteEl = document.getElementById('motivationalQuote');
@@ -883,6 +911,12 @@ function updateEstimate(totalMins, avgMins) {
     const estText = document.getElementById('estimateText');
     const estBadge = document.getElementById('estimateBadge');
 
+    if (avgMins === 0) {
+        if (estText) estText.textContent = 'Log your hours to see your estimated completion date.';
+        if (estBadge) estBadge.textContent = '—';
+        return;
+    }
+
     const remainingMins = Math.max(0, REQUIRED_HOURS * 60 - totalMins);
     if (remainingMins === 0) {
         if (estText) estText.textContent = '🎉 Congratulations! You have completed your 240-hour internship requirement!';
@@ -890,37 +924,21 @@ function updateEstimate(totalMins, avgMins) {
         return;
     }
 
+    const remainingDays = Math.ceil(remainingMins / avgMins);
+    let workDaysAdded = 0;
     const currentDate = new Date();
+    // Pre-load holidays for this year and next (spans may cross year boundary)
     const thisYear = currentDate.getFullYear();
-    const targetDate = new Date(thisYear, 6, 31); // July 31
-    targetDate.setHours(23, 59, 59, 999);
-
-    if (currentDate > targetDate) {
-        if (estText) estText.textContent = 'The July 31 deadline has passed, but you still have hours remaining.';
-        if (estBadge) estBadge.textContent = 'Overdue';
-        return;
-    }
-
     const holidays = new Set([...getPHHolidays(thisYear), ...getPHHolidays(thisYear + 1)]);
-    let workDaysLeft = 0;
-    
-    // Count remaining work days starting from tomorrow
-    let checkDate = new Date();
-    checkDate.setDate(checkDate.getDate() + 1);
-    checkDate.setHours(0, 0, 0, 0);
-    
-    while (checkDate <= targetDate) {
-        if (isWorkDay(checkDate, holidays)) {
-            workDaysLeft++;
-        }
-        checkDate.setDate(checkDate.getDate() + 1);
+
+    while (workDaysAdded < remainingDays) {
+        currentDate.setDate(currentDate.getDate() + 1);
+        if (isWorkDay(currentDate, holidays)) workDaysAdded++;
     }
 
-    if (workDaysLeft === 0) workDaysLeft = 1; // Prevent division by zero if it's the last day
-    const requiredMinsPerDay = Math.ceil(remainingMins / workDaysLeft);
-
-    if (estText) estText.textContent = `To finish by July 31, you need to average ${minutesToHM(requiredMinsPerDay)}/day for the remaining ${workDaysLeft} work days.`;
-    if (estBadge) estBadge.textContent = 'July 31 Deadline';
+    const dateLabel = currentDate.toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' });
+    if (estText) estText.textContent = `At your current pace of ${minutesToHM(avgMins)}/day, you need ${remainingDays} more work days (excl. weekends & PH holidays).`;
+    if (estBadge) estBadge.textContent = dateLabel;
 }
 
 // ==================== RECENT ACTIVITY ====================
